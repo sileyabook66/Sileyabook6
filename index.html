@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script>
+      // Catch early benign websocket disconnects from Vite HMR in preview sandbox
+      window.addEventListener('unhandledrejection', function(e) {
+        var msg = e.reason ? (e.reason.message || String(e.reason)) : '';
+        if (msg.indexOf('WebSocket closed without opened') !== -1 || msg.indexOf('failed to connect to websocket') !== -1) {
+          e.preventDefault();
+          if (e.stopImmediatePropagation) e.stopImmediatePropagation();
+        }
+      });
+    </script>
+    <title>Studio Manuscrit — Édition & Composition d'eBooks et Livres Brochés</title>
+    <meta name="description" content="Studio Manuscrit : Plateforme d'édition et de composition de livres brochés et eBooks : mise en page typographique, gabarits de couverture intégrale (Full-Wrap), mentions légales & ISBN, atelier de révision et kit marketing." />
+    <meta property="og:title" content="Studio Manuscrit — Édition & Composition d'eBooks et Livres Brochés" />
+    <meta property="og:description" content="Plateforme d'édition et de composition de livres brochés et eBooks : mise en page typographique, gabarits de couverture intégrale (Full-Wrap), mentions légales & ISBN, atelier de révision et kit marketing." />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,600&family=Shadows+Into+Light&family=IBM+Plex+Mono:ital,wght@0,400;0,600;1,400&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;1,6..72,400&display=swap" rel="stylesheet">
+  </head>
+  <body class="bg-[#F6F8FF] text-[#14161F] antialiased selection:bg-[#2B4DE8] selection:text-white">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+

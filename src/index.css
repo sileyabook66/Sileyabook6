@@ -1,0 +1,261 @@
+@import "tailwindcss";
+
+@layer base {
+  body {
+    font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background-color: #F6F8FF;
+    color: #14161F;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Accessible focus rings across all interactive elements with SonicBook Electric Blue */
+  *:focus-visible {
+    outline: 2px solid #2B4DE8;
+    outline-offset: 2px;
+  }
+}
+
+/* Typography styles matching SonicBook.ai Design System */
+.font-poppins {
+  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.font-shadows {
+  font-family: 'Shadows Into Light', cursive;
+}
+
+.font-fraunces {
+  font-family: 'Poppins', sans-serif;
+}
+
+.font-work-sans {
+  font-family: 'Poppins', sans-serif;
+}
+
+.font-serif-book {
+  font-family: 'Newsreader', Georgia, serif;
+}
+
+.font-ibm-mono {
+  font-family: 'IBM Plex Mono', monospace;
+}
+
+.font-data-mono {
+  font-family: 'IBM Plex Mono', monospace;
+}
+
+.font-label-caps {
+  font-family: 'Poppins', sans-serif;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.font-display-title {
+  font-family: 'Poppins', sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+/* SonicBook.ai Color & Glow Utilities */
+.bg-sonic-blue {
+  background-color: #2B4DE8;
+}
+
+.bg-sonic-blue-dark {
+  background-color: #1B36C9;
+}
+
+.bg-sonic-orange {
+  background-color: #FF7F00;
+}
+
+.bg-sonic-dark {
+  background-color: #14161F;
+}
+
+.text-sonic-blue {
+  color: #2B4DE8;
+}
+
+.text-sonic-orange {
+  color: #FF7F00;
+}
+
+.border-sonic-blue {
+  border-color: #2B4DE8;
+}
+
+.gradient-sonic-blue {
+  background: linear-gradient(135deg, #2B4DE8 0%, #1B36C9 100%);
+}
+
+.gradient-sonic-orange {
+  background: linear-gradient(135deg, #FF7F00 0%, #F26A00 100%);
+}
+
+.gradient-sonic-dark {
+  background: linear-gradient(180deg, #14161F 0%, #0B0F19 100%);
+}
+
+/* SonicBook Shadows & Elevated Cards */
+.shadow-sonic {
+  box-shadow: 0 10px 25px -5px rgba(43, 77, 232, 0.2), 0 8px 10px -6px rgba(43, 77, 232, 0.15);
+}
+
+.shadow-sonic-orange {
+  box-shadow: 0 10px 25px -5px rgba(255, 127, 0, 0.3), 0 8px 10px -6px rgba(255, 127, 0, 0.2);
+}
+
+.shadow-card-soft {
+  box-shadow: 0 4px 20px rgba(20, 22, 31, 0.05);
+}
+
+.shadow-ink, .ink-shadow {
+  box-shadow: 0 4px 14px rgba(43, 77, 232, 0.12);
+}
+
+.shadow-ink-lg {
+  box-shadow: 0 12px 30px rgba(43, 77, 232, 0.18);
+}
+
+.editorial-divider {
+  border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+}
+
+.editorial-input {
+  border-bottom: 2px solid #2B4DE8;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.editorial-input:focus {
+  border-bottom-color: #FF7F00;
+  outline: none;
+}
+
+.interactive-card {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.interactive-card:active {
+  transform: scale(0.98);
+}
+
+.hover-scale {
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.hover-scale:hover {
+  transform: scale(1.02);
+  box-shadow: 0 12px 28px rgba(43, 77, 232, 0.15);
+}
+
+.cover-card {
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.cover-card:hover {
+  transform: scale(1.02) translateY(-4px);
+  box-shadow: 0 14px 32px rgba(43, 77, 232, 0.22);
+}
+
+/* Staggered Animations */
+@keyframes fadeInUp {
+  0% { opacity: 0; transform: translateY(20px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+.animate-staggered-fade-in {
+  animation: fadeInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.stagger-1 { animation-delay: 0.1s; }
+.stagger-2 { animation-delay: 0.2s; }
+.stagger-3 { animation-delay: 0.3s; }
+.stagger-4 { animation-delay: 0.4s; }
+.stagger-5 { animation-delay: 0.5s; }
+
+/* Paper / Manuscript Styling */
+.manuscript-paper {
+  background-color: #FFFFFF;
+  background-image: 
+    radial-gradient(circle at 100% 0%, rgba(43, 77, 232, 0.03) 0%, transparent 40%),
+    radial-gradient(circle at 0% 100%, rgba(255, 127, 0, 0.02) 0%, transparent 50%),
+    linear-gradient(to right, rgba(20, 22, 31, 0.015) 1px, transparent 1px);
+  background-size: auto, auto, 100% 28px;
+}
+
+.paper-shadow {
+  box-shadow: 
+    0 1px 3px rgba(20, 22, 31, 0.04),
+    0 10px 25px -5px rgba(43, 77, 232, 0.06),
+    0 20px 35px -10px rgba(20, 22, 31, 0.05);
+}
+
+.book-binding-spine {
+  position: relative;
+}
+.book-binding-spine::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 14px;
+  background: linear-gradient(to right, rgba(0,0,0,0.1), rgba(0,0,0,0.02) 40%, rgba(255,255,255,0.4) 60%, rgba(0,0,0,0.04) 100%);
+  border-right: 1px dashed rgba(0,0,0,0.08);
+  pointer-events: none;
+  z-index: 10;
+}
+
+@keyframes inkBleed {
+  0% {
+    opacity: 0.15;
+    filter: blur(1.5px);
+    transform: translateY(3px);
+  }
+  100% {
+    opacity: 1;
+    filter: blur(0px);
+    transform: translateY(0);
+  }
+}
+
+.animate-ink-bleed {
+  animation: inkBleed 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 0.85;
+  }
+}
+
+.animate-pulse-glow {
+  animation: pulseGlow 2s ease-in-out infinite;
+}
+
+/* Mobile & Touch Optimizations */
+.safe-bottom {
+  padding-bottom: calc(0.5rem + env(safe-area-inset-bottom, 0px));
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Touch targets minimum 44px on mobile devices */
+@media (max-width: 640px) {
+  button, a, input, select, textarea {
+    touch-action: manipulation;
+  }
+}
+
+

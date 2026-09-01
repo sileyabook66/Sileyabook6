@@ -1,0 +1,8 @@
+{
+  "name": "Studio Manuscrit",
+  "description": "Plateforme d'édition et de composition de livres brochés et eBooks : mise en page typographique, gabarits de couverture intégrale (Full-Wrap), mentions légales & ISBN, atelier de révision et kit marketing.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
