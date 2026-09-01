@@ -6,7 +6,7 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { countChapterWords, calculateChapterA5Pages, getChapterMetrics, splitChapterIfExceedsLimit } from "./src/lib/textStructure";
 import { generateCalibratedSubstantiveChapter } from "./src/lib/calibratedGenerator";
 
-dotenv.config();
+dotenv.config({ quiet: true });
 
 // Sanitize CLOUDINARY_URL if present but missing the required protocol
 if (process.env.CLOUDINARY_URL && !process.env.CLOUDINARY_URL.startsWith("cloudinary://")) {
