@@ -126,7 +126,7 @@ export const LegalPageLayout: React.FC<LegalPageLayoutProps> = ({
       </header>
 
       {/* Breadcrumbs & Tab Bar */}
-      <div className="w-full bg-[#FAF5EB] border-b border-[#E5DBCA]">
+      <div className="w-full min-w-0 bg-[#FAF5EB] border-b border-[#E5DBCA]">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
           
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -169,7 +169,7 @@ export const LegalPageLayout: React.FC<LegalPageLayoutProps> = ({
       </div>
 
       {/* Main Container */}
-      <main className="flex-1 max-w-4xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+      <main className="flex-1 min-w-0 max-w-4xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
         
         {/* Back Button */}
         <button
