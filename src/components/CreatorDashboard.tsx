@@ -547,13 +547,13 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
                 <PlusCircle className="w-5 h-5 text-[#93C5FD] group-hover:text-[#1A1205] transition-colors" />
               </div>
               <h3 className="font-fraunces text-base font-bold text-white mb-1 group-hover:text-[#FFDDB0] transition-colors">
-                Nouveau Manuscrit
+                Composer un livre
               </h3>
               <p className="font-work-sans text-xs text-[#93C5FD] max-w-xs mb-3">
-                Générez ou mettez en page un nouveau texte.
+                Depuis une idée, un lien YouTube ou votre propre texte.
               </p>
               <span className="text-[11px] font-bold text-[#C98A2C] uppercase tracking-wider group-hover:underline">
-                Créer →
+                Composer →
               </span>
             </article>
 
