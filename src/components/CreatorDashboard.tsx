@@ -194,11 +194,11 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
             </div>
 
             <h1 className="font-fraunces text-2xl sm:text-3xl font-bold text-white tracking-tight leading-tight">
-              Tableau de Bord
+              Votre livre, publié cette semaine — pas dans six mois
             </h1>
 
             <p className="font-work-sans text-xs sm:text-sm text-[#F2E9D8]/80 leading-relaxed">
-              Gérez vos manuscrits littéraires, personnalisez vos chapitres et exportez vos fichiers prêts pour l'impression <strong>Amazon KDP 6 × 9"</strong> et les liseuses.
+              Racontez votre idée, importez une vidéo ou collez votre texte : SileyaBook compose, met en page et calibre votre manuscrit aux normes <strong>Amazon KDP 6 × 9"</strong> et liseuses. Aucune compétence technique requise.
             </p>
           </div>
 
@@ -209,7 +209,7 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
               className="bg-[#C98A2C] hover:bg-[#b07521] text-[#1A1205] font-fraunces font-bold text-xs sm:text-sm px-5 py-3 rounded-xl shadow-md transition-all flex items-center space-x-2"
             >
               <Feather className="w-4 h-4" />
-              <span>Nouveau Manuscrit</span>
+              <span>{totalEbooks === 0 ? 'Composer mon premier livre' : 'Composer un nouveau livre'}</span>
               <ArrowRight className="w-3.5 h-3.5 ml-0.5" />
             </button>
 
@@ -218,7 +218,7 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
               className="bg-[#0F1B33] hover:bg-[#16274A] text-[#F2E9D8] border border-[#C98A2C]/40 font-work-sans font-semibold text-xs sm:text-sm px-4 py-3 rounded-xl shadow-xs transition-all flex items-center space-x-2"
             >
               <Tag className="w-4 h-4 text-[#C98A2C]" />
-              <span>Tarifs &amp; Recharges</span>
+              <span>Voir les tarifs (dès 1 000 FCFA)</span>
             </button>
           </div>
 
@@ -408,12 +408,12 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
               <h3 className="font-fraunces text-base font-bold text-white">
                 {searchQuery || statusFilter !== 'all'
                   ? 'Aucun manuscrit ne correspond à vos filtres'
-                  : 'Votre bibliothèque est encore vierge'}
+                  : 'Votre premier livre commence ici'}
               </h3>
               <p className="text-xs text-[#93C5FD] font-work-sans max-w-md mx-auto">
                 {searchQuery || statusFilter !== 'all'
                   ? 'Essayez de réinitialiser la recherche ou de sélectionner « Tous ».'
-                  : 'Commencez dès maintenant en créant votre premier livre.'}
+                  : 'Collez un texte, une idée ou un lien YouTube — SileyaBook s\'occupe de la composition et de la mise en page KDP.'}
               </p>
             </div>
             <button
@@ -421,7 +421,7 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
               className="inline-flex items-center space-x-2 px-5 py-2.5 bg-[#C98A2C] hover:bg-[#b07521] text-[#1A1205] font-fraunces font-bold rounded-xl text-xs shadow-md transition-all"
             >
               <PlusCircle className="w-4 h-4 text-[#1A1205]" />
-              <span>Créer un manuscrit</span>
+              <span>Composer mon premier livre</span>
             </button>
           </div>
         ) : dashboardViewMode === 'bento' ? (
