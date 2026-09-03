@@ -56,7 +56,7 @@ export const SILEYABOOK_OFFERS: PricingOffer[] = [
     prixFormate: '1 000 FCFA',
     equivalentPages: 30,
     delaiEstime: 'Immédiat (< 30 secondes)',
-    description: "L'utilisateur colle son propre texte brut, Sileyabook le met en page automatiquement, export PDF sans couverture.",
+    description: "Vous avez déjà votre texte ? Collez-le, et repartez avec un PDF mis en page professionnellement — sans couverture.",
     inclusions: [
       { texte: "Collage de votre texte brut (sans mise en forme préalable)" },
       { texte: "Découpage automatique en chapitres et sections harmonieuses par Sileyabook" },
@@ -80,7 +80,7 @@ export const SILEYABOOK_OFFERS: PricingOffer[] = [
     prixFormate: '1 500 FCFA',
     equivalentPages: 45,
     delaiEstime: 'Instantané (~1 minute)',
-    description: "Comme l'offre 1, avec en plus une couverture créée par Sileyabook (5 propositions artistiques au choix).",
+    description: "Le même travail soigné, plus une couverture professionnelle : 5 propositions au choix, prêtes à publier.",
     inclusions: [
       { texte: "Tout ce qui est inclus dans l'offre « Mise en page »" },
       { texte: "Création de la couverture du livre par Sileyabook", highlight: true },
@@ -101,7 +101,7 @@ export const SILEYABOOK_OFFERS: PricingOffer[] = [
     prixFormate: '3 500 FCFA',
     equivalentPages: 100,
     delaiEstime: 'Instantané (~2 minutes)',
-    description: "Sileyabook génère l'intégralité du contenu depuis un sujet ou une source donnée, plus la couverture personnalisée.",
+    description: "Vous n'avez qu'une idée ? Donnez-nous un sujet, une vidéo ou un document — on rédige le livre en entier, couverture comprise.",
     inclusions: [
       { texte: "Génération intégrale du contenu par Sileyabook depuis votre sujet, mot-clé, vidéo ou document", highlight: true },
       { texte: "Plan éditorial structuré, chapitres rédigés, citations et notes de bas de page automatiques" },
@@ -354,7 +354,7 @@ export const PricingScreen: React.FC<PricingScreenProps> = ({
         </h1>
         
         <p className="text-sm sm:text-base text-[#4A4E5A] font-poppins leading-relaxed">
-          Payez uniquement pour ce que vous créez. Choisissez la formule adaptée à votre projet et publiez votre ouvrage avec la rigueur typographique de SileyaBook.
+          Payez uniquement pour ce que vous créez, aucun abonnement. Trois formules simples, du texte mis en page au livre généré de A à Z.
         </p>
 
         {/* Security & Instant Delivery Highlights */}
