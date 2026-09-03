@@ -888,7 +888,7 @@ export const StudioSourceSelector: React.FC<StudioSourceSelectorProps> = ({
                 </div>
 
                 {/* Direct Number Input with +/- Steppers */}
-                <div className="flex items-center space-x-1.5 self-start sm:self-auto">
+                <div className="flex items-center flex-wrap gap-1.5 self-start sm:self-auto">
                   <button
                     type="button"
                     title="Diminuer de 10 pages"

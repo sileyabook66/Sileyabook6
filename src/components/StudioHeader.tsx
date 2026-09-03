@@ -45,16 +45,16 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
         <div className="flex items-center justify-between h-16 sm:h-18">
           
           {/* Logo & Route */}
-          <div className="flex items-center space-x-3 sm:space-x-4">
+          <div className="flex items-center space-x-3 sm:space-x-4 min-w-0">
             <button
               onClick={onNavigateToDashboard}
-              className="flex items-center space-x-3 text-left group"
+              className="flex items-center space-x-3 text-left group min-w-0"
               title="Retour au Tableau de Bord (/dashboard)"
             >
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#2B4DE8] to-[#1B36C9] text-white flex items-center justify-center shadow-sonic border border-[#2B4DE8]/30 group-hover:scale-105 transition-all">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#2B4DE8] to-[#1B36C9] text-white flex items-center justify-center shadow-sonic border border-[#2B4DE8]/30 group-hover:scale-105 transition-all shrink-0">
                 <Feather className="w-5 h-5 text-white" />
               </div>
-              <div>
+              <div className="min-w-0">
                 <div className="flex items-center space-x-2">
                   <span className="font-poppins text-lg sm:text-xl font-bold tracking-tight text-[#14161F] group-hover:text-[#2B4DE8] transition-colors">
                     SileyaBook
@@ -63,12 +63,12 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
                     AI Studio
                   </span>
                 </div>
-                <div className="flex items-center space-x-1.5 text-xs text-[#8089A6] font-poppins">
+                <div className="flex items-center space-x-1.5 text-xs text-[#8089A6] font-poppins truncate">
                   <span className="font-data-mono text-[10px] text-[#2B4DE8] font-semibold">
                     {activeView === 'dashboard' ? '/dashboard' : activeView === 'studio' ? '/studio/nouveau' : activeView === 'tarifs' ? '/tarifs' : '/studio/manuscrit'}
                   </span>
-                  <span>•</span>
-                  <span>
+                  <span className="hidden sm:inline">•</span>
+                  <span className="hidden sm:inline">
                     {activeView === 'dashboard' ? 'Tableau de bord' : activeView === 'studio' ? 'Générateur de Manuscrit' : activeView === 'tarifs' ? 'Tarifs & Offres' : 'Lecteur & Édition'}
                   </span>
                 </div>
@@ -129,7 +129,7 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
           </nav>
 
           {/* Actions & Balance Quota */}
-          <div className="flex items-center space-x-2 sm:space-x-3">
+          <div className="flex items-center space-x-1.5 sm:space-x-3 shrink-0">
             
             {/* Mobile Nav Switcher */}
             <div className="flex md:hidden items-center space-x-1 bg-[#F6F8FF] p-1 rounded-lg border border-[#E7EAF3]">
@@ -189,11 +189,11 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
             {/* Quick Pricing / Offers Action Button in Sonic Vibrant Orange */}
             <button
               onClick={onOpenUpgrade}
-              className="inline-flex items-center space-x-1.5 px-4 py-2 bg-gradient-to-r from-[#FF7F00] to-[#F26A00] hover:from-[#F26A00] hover:to-[#E05E00] text-white rounded-full text-xs font-poppins font-bold shadow-sonic-orange hover:scale-105 transition-all"
+              className="inline-flex items-center space-x-1.5 px-3 lg:px-4 py-2 bg-gradient-to-r from-[#FF7F00] to-[#F26A00] hover:from-[#F26A00] hover:to-[#E05E00] text-white rounded-full text-xs font-poppins font-bold shadow-sonic-orange hover:scale-105 transition-all shrink-0"
               title="Voir les offres Sileyabook (à partir de 1 000 FCFA)"
             >
               <Sparkles className="w-3.5 h-3.5 text-white" />
-              <span>Nos Offres</span>
+              <span className="hidden sm:inline">Nos Offres</span>
             </button>
 
           </div>

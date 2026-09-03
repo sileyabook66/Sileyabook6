@@ -130,7 +130,7 @@ export const SiteFooter: React.FC<SiteFooterProps> = ({ onNavigate }) => {
             <span>Édité par SECRETS DIVIN</span>
           </div>
 
-          <div className="flex items-center space-x-4">
+          <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5">
             <button
               onClick={() => onNavigate('/tarifs')}
               className="hover:text-[#1B2A4A] transition-colors font-semibold text-[#1B2A4A]"
