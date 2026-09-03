@@ -243,10 +243,10 @@ export const StudioSourceSelector: React.FC<StudioSourceSelectorProps> = ({
         </div>
 
         <h1 className="font-poppins text-2xl sm:text-3xl lg:text-4xl font-extrabold text-[#14161F] tracking-tight">
-          Générateur &amp; Studio de Composition IA
+          Comment voulez-vous composer votre livre ?
         </h1>
         <p className="text-sm sm:text-base text-[#4A4E5A] max-w-2xl mx-auto font-poppins">
-          Créez en quelques clics des livres brochés et eBooks prêts à la vente avec notre moteur d'édition haute fidélité.
+          Laissez l'IA rédiger à partir d'une idée, ou mettez en page un texte que vous avez déjà écrit — à vous de choisir.
         </p>
       </div>
 
@@ -277,7 +277,7 @@ export const StudioSourceSelector: React.FC<StudioSourceSelectorProps> = ({
           <p className={`font-poppins text-xs sm:text-sm max-w-xs leading-relaxed transition-colors duration-300 ${
             studioMode === 'ai_generation' ? 'text-blue-100' : 'text-[#8089A6]'
           }`}>
-            Composition automatisée d'un manuscrit structuré à partir d'un sujet, plan, document ou vidéo.
+            Décrivez votre sujet, ou partagez un document ou une vidéo : votre manuscrit complet et structuré est prêt en quelques minutes.
           </p>
 
           {/* Selected marker */}
@@ -312,7 +312,7 @@ export const StudioSourceSelector: React.FC<StudioSourceSelectorProps> = ({
           <p className={`font-poppins text-xs sm:text-sm max-w-xs leading-relaxed transition-colors duration-300 ${
             studioMode === 'layout_raw_text' ? 'text-blue-100' : 'text-[#8089A6]'
           }`}>
-            Importez vos propres écrits. Mise en page et formatage 100% fidèle au texte original.
+            Importez vos propres écrits : mise en page et formatage aux normes KDP, sans qu'un seul mot ne soit réécrit.
           </p>
 
           {/* Selected marker */}
