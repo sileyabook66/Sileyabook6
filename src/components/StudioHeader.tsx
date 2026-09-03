@@ -77,10 +77,10 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
           </div>
 
           {/* Center Navigation Tabs */}
-          <nav className="hidden md:flex items-center space-x-1 bg-[#F6F8FF] p-1 rounded-xl border border-[#E7EAF3]">
+          <nav className="hidden md:flex items-center space-x-1 bg-[#F6F8FF] p-1 rounded-xl border border-[#E7EAF3] shrink-0">
             <button
               onClick={onNavigateToDashboard}
-              className={`inline-flex items-center space-x-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold font-poppins transition-all ${
+              className={`inline-flex items-center space-x-1.5 px-3 lg:px-3.5 py-1.5 rounded-lg text-xs font-semibold font-poppins transition-all whitespace-nowrap ${
                 activeView === 'dashboard'
                   ? 'bg-white text-[#2B4DE8] shadow-xs font-bold border border-[#E7EAF3]'
                   : 'text-[#4A4E5A] hover:text-[#2B4DE8]'
@@ -93,7 +93,7 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
             {onOpenActiveEbook && activeView === 'viewer' && (
               <button
                 onClick={onOpenActiveEbook}
-                className="inline-flex items-center space-x-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold font-poppins bg-[#2B4DE8] text-white shadow-sonic transition-all"
+                className="inline-flex items-center space-x-1.5 px-3 lg:px-3.5 py-1.5 rounded-lg text-xs font-bold font-poppins bg-[#2B4DE8] text-white shadow-sonic transition-all whitespace-nowrap"
                 title="Consulter le manuscrit en cours"
               >
                 <BookOpen className="w-3.5 h-3.5 text-white" />
@@ -103,7 +103,7 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
 
             <button
               onClick={onNavigateToStudio}
-              className={`inline-flex items-center space-x-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold font-poppins transition-all ${
+              className={`inline-flex items-center space-x-1.5 px-3 lg:px-3.5 py-1.5 rounded-lg text-xs font-semibold font-poppins transition-all whitespace-nowrap ${
                 activeView === 'studio'
                   ? 'bg-white text-[#2B4DE8] shadow-xs font-bold border border-[#E7EAF3]'
                   : 'text-[#4A4E5A] hover:text-[#2B4DE8]'
@@ -116,7 +116,7 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
             {onNavigateToTarifs && (
               <button
                 onClick={onNavigateToTarifs}
-                className={`inline-flex items-center space-x-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold font-poppins transition-all ${
+                className={`inline-flex items-center space-x-1.5 px-3 lg:px-3.5 py-1.5 rounded-lg text-xs font-semibold font-poppins transition-all whitespace-nowrap ${
                   activeView === 'tarifs'
                     ? 'bg-white text-[#2B4DE8] shadow-xs font-bold border border-[#E7EAF3]'
                     : 'text-[#4A4E5A] hover:text-[#2B4DE8]'
@@ -183,7 +183,7 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
               title="Consulter le journal des compositions"
             >
               <History className="w-3.5 h-3.5 text-[#8089A6]" />
-              <span className="hidden sm:inline">Journal</span>
+              <span className="hidden lg:inline">Journal</span>
             </button>
 
             {/* Quick Pricing / Offers Action Button in Sonic Vibrant Orange */}
