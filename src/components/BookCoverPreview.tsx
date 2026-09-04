@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
-import { 
-  Sparkles, 
-  User, 
+import {
+  User,
   Palette, 
   BookOpen, 
   FileDown, 
@@ -238,7 +237,7 @@ export const BookCoverPreview: React.FC<BookCoverPreviewProps> = ({
         <div className="space-y-1">
           <div className="flex items-center space-x-2">
             <div className="w-7 h-7 rounded-lg bg-[#1B2A4A] text-[#93C5FD] flex items-center justify-center">
-              <Sparkles className="w-4 h-4" />
+              <Palette className="w-4 h-4" />
             </div>
             <h3 className="font-display-title text-xl font-bold text-[#0F172A]">
               Atelier de Couverture Personnalisée

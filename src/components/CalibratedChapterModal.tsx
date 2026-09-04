@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { 
-  Sparkles, 
-  X, 
+import {
+  Feather,
+  X,
   CheckCircle2, 
   AlertCircle, 
   FileText, 
@@ -119,7 +119,7 @@ export const CalibratedChapterModal: React.FC<CalibratedChapterModalProps> = ({
         <div className="p-6 border-b border-[#E8DFCC] bg-[#F4EDE0] flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <div className="w-10 h-10 rounded-xl bg-[#8C2D19] text-[#FAF7F0] flex items-center justify-center shadow-xs">
-              <Sparkles className="w-5 h-5" />
+              <Feather className="w-5 h-5" />
             </div>
             <div>
               <h3 id="calibrated-modal-title" className="text-lg font-display-title font-bold text-[#1C1A17]">
@@ -146,7 +146,7 @@ export const CalibratedChapterModal: React.FC<CalibratedChapterModalProps> = ({
           <div className="bg-[#FAF3E6] border border-[#E8DFCC] rounded-xl p-4 space-y-2.5">
             <div className="flex items-center space-x-2 text-xs font-bold text-[#8C2D19]">
               <ShieldCheck className="w-4 h-4" />
-              <span>Contraintes éditoriales strictes appliquées par Gemini :</span>
+              <span>Contraintes éditoriales strictes appliquées par SileyaBook :</span>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-[#4A4032]">
               <div className="flex items-start space-x-2 bg-white/70 p-2.5 rounded-lg border border-[#EDE3CF]">
@@ -257,11 +257,11 @@ export const CalibratedChapterModal: React.FC<CalibratedChapterModalProps> = ({
               {isLoading ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Génération du chapitre en cours avec Gemini (~2500 mots)...</span>
+                  <span>Génération du chapitre en cours (~2500 mots)...</span>
                 </>
               ) : (
                 <>
-                  <Sparkles className="w-4 h-4 text-[#93C5FD]" />
+                  <Feather className="w-4 h-4 text-[#93C5FD]" />
                   <span>Générer le Chapitre Calibré (Chapitre {nextChapterNumber})</span>
                 </>
               )}

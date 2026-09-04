@@ -3,9 +3,8 @@ import {
   X, 
   Download, 
   Copy, 
-  Check, 
-  Sparkles, 
-  Quote, 
+  Check,
+  Quote,
   Share2, 
   Palette, 
   Maximize2, 
@@ -641,7 +640,7 @@ export const SocialQuoteModal: React.FC<SocialQuoteModalProps> = ({
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <label className="text-xs font-bold uppercase tracking-wider text-[#60A5FA] flex items-center space-x-1.5">
-                    <Sparkles className="w-3.5 h-3.5 text-[#60A5FA]" />
+                    <Quote className="w-3.5 h-3.5 text-[#60A5FA]" />
                     <span>Citations Clés du Livre ({availablePresetQuotes.length})</span>
                   </label>
                   <span className="text-[11px] text-[#93C5FD] font-serif-book italic">Sélection 1-clic</span>

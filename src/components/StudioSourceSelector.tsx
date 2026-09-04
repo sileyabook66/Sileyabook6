@@ -2,10 +2,10 @@ import React, { useState, useRef, useMemo } from 'react';
 import { 
   Youtube, 
   FileText, 
-  PenTool, 
-  Upload, 
-  Sparkles, 
-  AlertTriangle, 
+  PenTool,
+  Upload,
+  Feather,
+  AlertTriangle,
   CheckCircle2, 
   Info, 
   SlidersHorizontal,
@@ -246,7 +246,7 @@ export const StudioSourceSelector: React.FC<StudioSourceSelectorProps> = ({
           Comment voulez-vous composer votre livre ?
         </h1>
         <p className="text-sm sm:text-base text-[#4A4E5A] max-w-2xl mx-auto font-poppins">
-          Laissez l'IA rédiger à partir d'une idée, ou mettez en page un texte que vous avez déjà écrit — à vous de choisir.
+          Laissez SileyaBook rédiger à partir d'une idée, ou mettez en page un texte que vous avez déjà écrit — à vous de choisir.
         </p>
       </div>
 
@@ -268,11 +268,11 @@ export const StudioSourceSelector: React.FC<StudioSourceSelectorProps> = ({
               ? 'bg-white/20 text-white shadow-xs'
               : 'bg-[#EEF2FF] text-[#1877F2]'
           }`}>
-            <Sparkles className="w-6 h-6" />
+            <Feather className="w-6 h-6" />
           </div>
 
           <h2 className="font-poppins text-lg sm:text-xl font-bold">
-            Rédiger avec SileyaBook IA
+            Rédiger avec SileyaBook
           </h2>
           <p className={`font-poppins text-xs sm:text-sm max-w-xs leading-relaxed transition-colors duration-300 ${
             studioMode === 'ai_generation' ? 'text-blue-100' : 'text-[#8089A6]'
@@ -1120,7 +1120,7 @@ export const StudioSourceSelector: React.FC<StudioSourceSelectorProps> = ({
                   : 'bg-gradient-to-r from-[#2B4DE8] to-[#1B36C9] hover:from-[#1B36C9] hover:to-[#011CF6] text-white hover:scale-[1.02] active:scale-[0.98]'
               }`}
             >
-              <Sparkles className="w-4 h-4 text-white" />
+              <Feather className="w-4 h-4 text-white" />
               <span>Générer le Manuscrit ({requiredCredits} pages)</span>
               <ArrowRight className="w-4 h-4 text-white" />
             </button>

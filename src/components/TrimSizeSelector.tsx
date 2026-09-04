@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
 import { 
   BookOpen, 
-  Check, 
-  Sparkles, 
-  Info, 
+  Check,
+  Info,
   Layers, 
   Maximize2, 
   ShieldCheck, 

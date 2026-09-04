@@ -18,7 +18,6 @@ import {
   Minimize2,
   Smartphone,
   Laptop,
-  Sparkles,
   ShieldCheck,
   RefreshCw
 } from 'lucide-react';

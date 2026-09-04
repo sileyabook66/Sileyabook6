@@ -6,8 +6,7 @@ import {
   BookOpen, 
   Bookmark, 
   ArrowRight, 
-  FileText, 
-  Sparkles,
+  FileText,
   Hash,
   Compass
 } from 'lucide-react';

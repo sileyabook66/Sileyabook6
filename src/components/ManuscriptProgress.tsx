@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Feather, Sparkles, Check, Clock, BookOpen, Layers } from 'lucide-react';
+import { Feather, Check, Clock, BookOpen, Layers } from 'lucide-react';
 import { SourceInputData } from '../types';
 
 interface ManuscriptProgressProps {

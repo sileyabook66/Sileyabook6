@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { 
   X, 
-  Search, 
-  Replace, 
-  Sparkles, 
-  History, 
+  Search,
+  Replace,
+  Type,
+  PenTool,
+  History,
   RotateCcw, 
   Check, 
   Trash2, 
@@ -130,15 +131,15 @@ export const RevisionToolsModal: React.FC<RevisionToolsModalProps> = ({
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-[#334155] bg-[#1E293B]">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-600 to-purple-600 text-white flex items-center justify-center shadow-md">
-              <Sparkles className="w-5 h-5" />
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#2B4DE8] to-[#1B36C9] text-white flex items-center justify-center shadow-md">
+              <PenTool className="w-5 h-5" />
             </div>
             <div>
               <div className="flex items-center space-x-2">
                 <h2 className="text-base font-bold text-white tracking-wide">
                   Atelier de Révision Éditoriale &amp; Typographie
                 </h2>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/40">
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-[#2B4DE8]/20 text-[#93C5FD] border border-[#2B4DE8]/40">
                   Qualité KDP
                 </span>
               </div>
@@ -163,7 +164,7 @@ export const RevisionToolsModal: React.FC<RevisionToolsModalProps> = ({
             onClick={() => setActiveTab('search')}
             className={`py-3 px-4 text-xs font-bold border-b-2 flex items-center space-x-2 transition-all ${
               activeTab === 'search'
-                ? 'border-indigo-500 text-indigo-400 bg-indigo-500/10'
+                ? 'border-[#2B4DE8] text-[#60A5FA] bg-[#2B4DE8]/10'
                 : 'border-transparent text-slate-400 hover:text-slate-200'
             }`}
           >
@@ -176,11 +177,11 @@ export const RevisionToolsModal: React.FC<RevisionToolsModalProps> = ({
             onClick={() => setActiveTab('typo')}
             className={`py-3 px-4 text-xs font-bold border-b-2 flex items-center space-x-2 transition-all ${
               activeTab === 'typo'
-                ? 'border-indigo-500 text-indigo-400 bg-indigo-500/10'
+                ? 'border-[#2B4DE8] text-[#60A5FA] bg-[#2B4DE8]/10'
                 : 'border-transparent text-slate-400 hover:text-slate-200'
             }`}
           >
-            <Sparkles className="w-4 h-4" />
+            <Type className="w-4 h-4" />
             <span>Nettoyeur Typographique Français</span>
           </button>
 
@@ -189,7 +190,7 @@ export const RevisionToolsModal: React.FC<RevisionToolsModalProps> = ({
             onClick={() => setActiveTab('snapshots')}
             className={`py-3 px-4 text-xs font-bold border-b-2 flex items-center space-x-2 transition-all ${
               activeTab === 'snapshots'
-                ? 'border-indigo-500 text-indigo-400 bg-indigo-500/10'
+                ? 'border-[#2B4DE8] text-[#60A5FA] bg-[#2B4DE8]/10'
                 : 'border-transparent text-slate-400 hover:text-slate-200'
             }`}
           >
@@ -204,14 +205,14 @@ export const RevisionToolsModal: React.FC<RevisionToolsModalProps> = ({
           {/* TAB 1: Search & Replace */}
           {activeTab === 'search' && (
             <div className="space-y-4">
-              <div className="p-4 rounded-xl bg-indigo-950/40 border border-indigo-500/30 text-xs text-indigo-200">
+              <div className="p-4 rounded-xl bg-[#0B1524]/40 border border-[#2B4DE8]/30 text-xs text-[#DBEAFE]">
                 Remplacez instantanément un terme, un nom de personnage ou une expression dans l'ensemble des titres, chapitres, sections, introductions et conclusions. Un point de sauvegarde est créé automatiquement avant chaque modification.
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <label className="block text-xs font-bold text-slate-300 flex items-center space-x-1.5">
-                    <Search className="w-3.5 h-3.5 text-indigo-400" />
+                    <Search className="w-3.5 h-3.5 text-[#60A5FA]" />
                     <span>Texte à rechercher</span>
                   </label>
                   <input
@@ -225,7 +226,7 @@ export const RevisionToolsModal: React.FC<RevisionToolsModalProps> = ({
 
                 <div className="space-y-1.5">
                   <label className="block text-xs font-bold text-slate-300 flex items-center space-x-1.5">
-                    <Replace className="w-3.5 h-3.5 text-indigo-400" />
+                    <Replace className="w-3.5 h-3.5 text-[#60A5FA]" />
                     <span>Remplacer par</span>
                   </label>
                   <input
@@ -245,7 +246,7 @@ export const RevisionToolsModal: React.FC<RevisionToolsModalProps> = ({
                     type="checkbox"
                     checked={caseSensitive}
                     onChange={(e) => setCaseSensitive(e.target.checked)}
-                    className="rounded border-slate-600 text-indigo-600 focus:ring-indigo-500 bg-[#1E293B]"
+                    className="rounded border-slate-600 text-[#2B4DE8] focus:ring-[#2B4DE8] bg-[#1E293B]"
                   />
                   <span>Respecter la casse (Majuscules/Minuscules)</span>
                 </label>
@@ -255,7 +256,7 @@ export const RevisionToolsModal: React.FC<RevisionToolsModalProps> = ({
                     type="checkbox"
                     checked={wholeWord}
                     onChange={(e) => setWholeWord(e.target.checked)}
-                    className="rounded border-slate-600 text-indigo-600 focus:ring-indigo-500 bg-[#1E293B]"
+                    className="rounded border-slate-600 text-[#2B4DE8] focus:ring-[#2B4DE8] bg-[#1E293B]"
                   />
                   <span>Mots entiers uniquement</span>
                 </label>
@@ -273,7 +274,7 @@ export const RevisionToolsModal: React.FC<RevisionToolsModalProps> = ({
                   type="button"
                   onClick={handleExecuteReplace}
                   disabled={!searchTerm.trim()}
-                  className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-bold text-xs shadow-md transition-all flex items-center space-x-2"
+                  className="px-5 py-2.5 rounded-xl bg-[#2B4DE8] hover:bg-[#1B36C9] disabled:opacity-50 text-white font-bold text-xs shadow-md transition-all flex items-center space-x-2"
                 >
                   <Replace className="w-4 h-4" />
                   <span>Remplacer dans tout le livre</span>
@@ -287,7 +288,7 @@ export const RevisionToolsModal: React.FC<RevisionToolsModalProps> = ({
             <div className="space-y-4">
               <div className="p-4 rounded-xl bg-[#1E293B] border border-slate-700 space-y-2">
                 <h4 className="text-xs font-bold text-white uppercase tracking-wider flex items-center space-x-2">
-                  <Sparkles className="w-4 h-4 text-amber-400" />
+                  <Type className="w-4 h-4 text-amber-400" />
                   <span>Règles typographiques de l'Imprimerie Nationale appliquées</span>
                 </h4>
                 <ul className="text-xs text-slate-300 space-y-1.5 list-disc list-inside">
@@ -332,7 +333,7 @@ export const RevisionToolsModal: React.FC<RevisionToolsModalProps> = ({
                   disabled={isCleaning}
                   className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-bold text-xs shadow-md transition-all flex items-center space-x-2"
                 >
-                  <Sparkles className="w-4 h-4 text-slate-950" />
+                  <Type className="w-4 h-4 text-slate-950" />
                   <span>{isCleaning ? 'Nettoyage en cours...' : 'Nettoyer et Formater la Typographie'}</span>
                 </button>
               </div>
@@ -353,7 +354,7 @@ export const RevisionToolsModal: React.FC<RevisionToolsModalProps> = ({
                 <button
                   type="button"
                   onClick={handleCreateSnapshot}
-                  className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl transition-all flex items-center justify-center space-x-2"
+                  className="px-4 py-2.5 bg-[#2B4DE8] hover:bg-[#1B36C9] text-white font-bold text-xs rounded-xl transition-all flex items-center justify-center space-x-2"
                 >
                   <History className="w-4 h-4" />
                   <span>Créer un Snapshot</span>
@@ -380,7 +381,7 @@ export const RevisionToolsModal: React.FC<RevisionToolsModalProps> = ({
                       <div className="space-y-1">
                         <div className="font-bold text-white flex items-center space-x-2">
                           <span>{snap.label}</span>
-                          <span className="text-[10px] font-mono text-indigo-300 bg-indigo-950 px-2 py-0.5 rounded border border-indigo-800">
+                          <span className="text-[10px] font-mono text-[#93C5FD] bg-[#0B1524] px-2 py-0.5 rounded border border-[#2E4374]">
                             {snap.chapters_count} chapitres
                           </span>
                         </div>
@@ -394,7 +395,7 @@ export const RevisionToolsModal: React.FC<RevisionToolsModalProps> = ({
                         <button
                           type="button"
                           onClick={() => handleRestoreSnapshot(snap)}
-                          className="px-3 py-1.5 bg-indigo-600/80 hover:bg-indigo-600 text-white rounded-lg font-semibold flex items-center space-x-1.5 transition-all"
+                          className="px-3 py-1.5 bg-[#2B4DE8]/80 hover:bg-[#2B4DE8] text-white rounded-lg font-semibold flex items-center space-x-1.5 transition-all"
                         >
                           <RotateCcw className="w-3.5 h-3.5" />
                           <span>Restaurer</span>

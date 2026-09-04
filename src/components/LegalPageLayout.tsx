@@ -8,8 +8,7 @@ import {
   RefreshCcw, 
   Lock, 
   ExternalLink,
-  ChevronRight,
-  Sparkles
+  ChevronRight
 } from 'lucide-react';
 
 export type LegalRoute = 'mentions-legales' | 'cgu' | 'remboursement' | 'confidentialite';
@@ -116,7 +115,7 @@ export const LegalPageLayout: React.FC<LegalPageLayoutProps> = ({
                 onClick={() => onNavigate('/studio')}
                 className="inline-flex items-center space-x-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-[#1B2A4A] hover:bg-[#2E4374] text-[#FAF7F0] shadow-xs transition-all"
               >
-                <Sparkles className="w-3.5 h-3.5 text-[#93C5FD]" />
+                <Feather className="w-3.5 h-3.5 text-[#93C5FD]" />
                 <span>Créer un eBook</span>
               </button>
             </div>

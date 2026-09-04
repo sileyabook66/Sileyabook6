@@ -7,9 +7,9 @@ import {
   Check, 
   ArrowLeft, 
   Copy, 
-  Quote, 
-  Sparkles, 
-  Bookmark, 
+  Quote,
+  PenTool,
+  Bookmark,
   Printer, 
   Share2, 
   Clock, 
@@ -556,7 +556,7 @@ export const ManuscriptViewer: React.FC<ManuscriptViewerProps> = ({
             className="inline-flex items-center space-x-1.5 px-3 py-1.5 bg-[#F2ECE0] hover:bg-[#E7DEC5] text-[#4A3D2A] border border-[#D5CAB7] rounded-lg text-xs font-semibold shadow-2xs transition-all focus-visible:ring-2 focus-visible:ring-[#1B2A4A] focus-visible:outline-hidden"
             title="Recherche globale, espaces insécables et snapshots"
           >
-            <Sparkles className="w-3.5 h-3.5 text-[#7C3AED]" aria-hidden="true" />
+            <PenTool className="w-3.5 h-3.5 text-[#1B2A4A]" aria-hidden="true" />
             <span>Révision &amp; Typo</span>
           </button>
 
@@ -606,7 +606,7 @@ export const ManuscriptViewer: React.FC<ManuscriptViewerProps> = ({
             className="inline-flex items-center space-x-1.5 px-3 py-1.5 bg-[#FDF4E7] hover:bg-[#FCEBD2] text-[#845415] border border-[#F3CCA0] rounded-lg text-xs font-bold shadow-2xs transition-all focus-visible:ring-2 focus-visible:ring-[#C98A2C] focus-visible:outline-hidden"
             title="Choisir parmi les visuels artistiques haute définition"
           >
-            <Sparkles className="w-3.5 h-3.5 text-[#C98A2C]" aria-hidden="true" />
+            <ImageIcon className="w-3.5 h-3.5 text-[#C98A2C]" aria-hidden="true" />
             <span>Galerie Sileya</span>
           </button>
 
@@ -617,7 +617,7 @@ export const ManuscriptViewer: React.FC<ManuscriptViewerProps> = ({
             className="inline-flex items-center space-x-1.5 px-3 py-1.5 bg-[#FAF2E1] hover:bg-[#F3E6CD] text-[#8C2D19] border border-[#DFCBAA] rounded-lg text-xs font-bold shadow-2xs transition-all focus-visible:ring-2 focus-visible:ring-[#8C2D19] focus-visible:outline-hidden"
             title="Générer un chapitre calibré (~2000 mots / ≤ 5 pages A5)"
           >
-            <Sparkles className="w-3.5 h-3.5 text-[#8C2D19]" aria-hidden="true" />
+            <Feather className="w-3.5 h-3.5 text-[#8C2D19]" aria-hidden="true" />
             <span>Chapitre Calibré (~2000 mots)</span>
           </button>
 
@@ -1433,7 +1433,7 @@ export const ManuscriptViewer: React.FC<ManuscriptViewerProps> = ({
               Plan Éditorial Structuré
             </h3>
             <p className="text-xs text-[#544A39] mt-1 font-serif-book italic">
-              Découpage et synoptique des chapitres générés par Gemini Studio.
+              Découpage et synoptique des chapitres générés par SileyaBook.
             </p>
           </div>
 

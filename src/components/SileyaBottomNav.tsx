@@ -1,5 +1,5 @@
 import React from 'react';
-import { BookOpen, Feather, Tag, Sparkles } from 'lucide-react';
+import { BookOpen, Feather, Tag } from 'lucide-react';
 
 interface SileyaBottomNavProps {
   activeView: 'dashboard' | 'studio' | 'viewer' | 'tarifs';

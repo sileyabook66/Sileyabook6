@@ -5,9 +5,8 @@ import {
   Check, 
   Save, 
   ShieldCheck, 
-  Feather, 
-  Sparkles, 
-  Barcode, 
+  Feather,
+  Barcode,
   Info, 
   Layers, 
   Heart, 
@@ -106,7 +105,7 @@ export const EditorialMetadataModal: React.FC<EditorialMetadataModalProps> = ({
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-[#334155] bg-[#1E293B]">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white flex items-center justify-center shadow-md">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#2B4DE8] to-[#1B36C9] text-white flex items-center justify-center shadow-md">
               <BookMarked className="w-5 h-5" />
             </div>
             <div>
@@ -295,7 +294,7 @@ export const EditorialMetadataModal: React.FC<EditorialMetadataModalProps> = ({
 
               <div className="space-y-1.5 pt-2">
                 <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center space-x-1.5">
-                  <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                  <Feather className="w-3.5 h-3.5 text-amber-400" />
                   <span>Remerciements &amp; Témoignages</span>
                 </label>
                 <textarea
@@ -327,7 +326,7 @@ export const EditorialMetadataModal: React.FC<EditorialMetadataModalProps> = ({
 
               <div className="space-y-1.5 pt-2">
                 <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center space-x-1.5">
-                  <BookMarked className="w-3.5 h-3.5 text-indigo-400" />
+                  <BookMarked className="w-3.5 h-3.5 text-[#60A5FA]" />
                   <span>Du Même Auteur (Un titre par ligne)</span>
                 </label>
                 <textarea

@@ -3,12 +3,12 @@ import {
   X, 
   ShoppingBag, 
   Copy, 
-  Check, 
-  Sparkles, 
-  Calculator, 
-  Tags, 
-  ListTree, 
-  Coins, 
+  Check,
+  FileText,
+  Calculator,
+  Tags,
+  ListTree,
+  Coins,
   ExternalLink,
   BookOpen,
   DollarSign
@@ -113,7 +113,7 @@ export const KdpMarketingKitModal: React.FC<KdpMarketingKitModalProps> = ({
                 : 'border-transparent text-slate-400 hover:text-slate-200'
             }`}
           >
-            <Sparkles className="w-4 h-4" />
+            <FileText className="w-4 h-4" />
             <span>Description Amazon HTML</span>
           </button>
 

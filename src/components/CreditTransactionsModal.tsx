@@ -3,9 +3,9 @@ import {
   X, 
   Receipt, 
   ArrowDownRight, 
-  ArrowUpRight, 
-  Sparkles, 
-  ShoppingBag, 
+  ArrowUpRight,
+  Gift,
+  ShoppingBag,
   Layers, 
   ShieldCheck, 
   Calendar,
@@ -227,7 +227,7 @@ export const CreditTransactionsModal: React.FC<CreditTransactionsModalProps> = (
                                   }`}
                                 >
                                   {tx.type === 'generation' && <ArrowDownRight className="w-3 h-3 text-amber-400" />}
-                                  {tx.type === 'bonus' && <Sparkles className="w-3 h-3 text-emerald-400" />}
+                                  {tx.type === 'bonus' && <Gift className="w-3 h-3 text-emerald-400" />}
                                   {tx.type === 'achat' && <ShoppingBag className="w-3 h-3 text-blue-400" />}
                                   <span>{tx.type}</span>
                                 </span>

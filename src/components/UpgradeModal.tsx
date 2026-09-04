@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Sparkles, Check, CheckCircle2, AlertTriangle, ExternalLink, Smartphone, Feather, ArrowRight } from 'lucide-react';
+import { X, Check, CheckCircle2, AlertTriangle, ExternalLink, Smartphone, Feather, ArrowRight } from 'lucide-react';
 import { UserProfile } from '../types';
 import { PricingScreen, SILEYABOOK_OFFERS, PricingOffer } from './PricingScreen';
 

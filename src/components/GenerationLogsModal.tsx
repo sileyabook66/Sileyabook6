@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, History, Sparkles, Youtube, FileText, PenTool, Clock, Layers, ShieldCheck, AlignLeft } from 'lucide-react';
+import { X, History, Youtube, FileText, PenTool, Clock, Layers, ShieldCheck, AlignLeft } from 'lucide-react';
 import { GenerationLog } from '../types';
 
 interface GenerationLogsModalProps {
@@ -27,10 +27,10 @@ export const GenerationLogsModal: React.FC<GenerationLogsModalProps> = ({
             </div>
             <div>
               <h3 className="font-display-title text-base font-bold text-white">
-                Journal des Générations (generation_logs)
+                Journal de Composition
               </h3>
               <p className="text-xs text-[#93C5FD] font-mono">
-                Audit des appels API Gemini Studio &amp; décompte des tokens
+                Historique de vos manuscrits composés
               </p>
             </div>
           </div>
@@ -48,7 +48,7 @@ export const GenerationLogsModal: React.FC<GenerationLogsModalProps> = ({
             <div className="text-center py-12 space-y-2 text-[#93C5FD]">
               <History className="w-8 h-8 mx-auto opacity-40 text-[#60A5FA]" />
               <p className="text-sm font-medium">Aucun journal de génération enregistré pour le moment.</p>
-              <p className="text-xs text-[#93C5FD]/80">Chaque génération de manuscrit sera tracée ici avec les pages et tokens consommés.</p>
+              <p className="text-xs text-[#93C5FD]/80">Chaque manuscrit composé sera enregistré ici, avec le nombre de pages et le temps de composition.</p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -68,7 +68,7 @@ export const GenerationLogsModal: React.FC<GenerationLogsModalProps> = ({
                         </span>
                       </div>
                       <span className="text-xs font-mono text-[#93C5FD] block">
-                        Log ID: {log.id} • {new Date(log.date).toLocaleString('fr-FR')}
+                        {new Date(log.date).toLocaleString('fr-FR')}
                       </span>
                     </div>
 
@@ -79,27 +79,19 @@ export const GenerationLogsModal: React.FC<GenerationLogsModalProps> = ({
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-[#2E4374] text-xs font-mono text-[#BFDBFE]">
+                  <div className="grid grid-cols-2 gap-2 pt-2 border-t border-[#2E4374] text-xs font-mono text-[#BFDBFE]">
                     <div>
                       <span className="text-[10px] text-[#93C5FD] block">Source</span>
                       <span className="font-bold flex items-center space-x-1">
                         {log.source_type === 'youtube' && <Youtube className="w-3 h-3 text-red-400 inline" />}
                         {log.source_type === 'document' && <FileText className="w-3 h-3 text-blue-400 inline" />}
-                        {log.source_type === 'prompt' && <PenTool className="w-3 h-3 text-purple-400 inline" />}
+                        {log.source_type === 'prompt' && <PenTool className="w-3 h-3 text-[#C98A2C] inline" />}
                         {log.source_type === 'texte_utilisateur' && <AlignLeft className="w-3 h-3 text-[#60A5FA] inline" />}
                         <span className="uppercase text-white">{log.source_type === 'texte_utilisateur' ? 'Texte Auteur' : log.source_type}</span>
                       </span>
                     </div>
                     <div>
-                      <span className="text-[10px] text-[#93C5FD] block">Tokens utilisés</span>
-                      <span className="font-bold text-white">{log.tokens_utilises.toLocaleString('fr-FR')} tokens</span>
-                    </div>
-                    <div>
-                      <span className="text-[10px] text-[#93C5FD] block">Modèle Gemini</span>
-                      <span className="font-bold text-white truncate block">{log.model_used}</span>
-                    </div>
-                    <div>
-                      <span className="text-[10px] text-[#93C5FD] block">Durée</span>
+                      <span className="text-[10px] text-[#93C5FD] block">Durée de composition</span>
                       <span className="font-bold text-white">{(log.duration_ms / 1000).toFixed(1)}s</span>
                     </div>
                   </div>

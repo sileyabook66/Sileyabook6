@@ -1,8 +1,7 @@
 import React from 'react';
-import { 
-  BookOpen, 
-  Sparkles, 
-  PlusCircle, 
+import {
+  BookOpen,
+  PlusCircle,
   History, 
   Feather, 
   ShieldCheck, 
@@ -60,7 +59,7 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
                     SileyaBook
                   </span>
                   <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-poppins font-semibold bg-[#EEF2FF] text-[#2B4DE8] border border-[#2B4DE8]/20">
-                    AI Studio
+                    Studio Auteur
                   </span>
                 </div>
                 <div className="flex items-center space-x-1.5 text-xs text-[#8089A6] font-poppins truncate">
@@ -167,13 +166,13 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
               )}
             </div>
 
-            {/* Dedicated Engine badge */}
-            <div 
-              title="Moteur Sileyabook connecté et sécurisé" 
+            {/* Secure session badge */}
+            <div
+              title="Atelier Sileyabook connecté et sécurisé"
               className="hidden lg:flex items-center space-x-1.5 px-3 py-1 rounded-full text-xs bg-[#EEF2FF] text-[#2B4DE8] border border-[#2B4DE8]/20 font-data-mono font-semibold"
             >
               <ShieldCheck className="w-3.5 h-3.5 text-[#2B4DE8]" />
-              <span>SILEYA ENGINE</span>
+              <span>ATELIER CONNECTÉ</span>
             </div>
 
             {/* Logs button */}
@@ -192,7 +191,7 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
               className="inline-flex items-center space-x-1.5 px-3 lg:px-4 py-2 bg-gradient-to-r from-[#FF7F00] to-[#F26A00] hover:from-[#F26A00] hover:to-[#E05E00] text-white rounded-full text-xs font-poppins font-bold shadow-sonic-orange hover:scale-105 transition-all shrink-0"
               title="Voir les offres Sileyabook (à partir de 1 000 FCFA)"
             >
-              <Sparkles className="w-3.5 h-3.5 text-white" />
+              <Tag className="w-3.5 h-3.5 text-white" />
               <span className="hidden sm:inline">Nos Offres</span>
             </button>
 

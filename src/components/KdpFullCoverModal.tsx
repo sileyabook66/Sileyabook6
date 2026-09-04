@@ -9,9 +9,8 @@ import {
   Eye, 
   Printer, 
   Ruler, 
-  Info, 
-  Sparkles, 
-  FileText, 
+  Info,
+  FileText,
   Barcode, 
   CheckCircle2, 
   AlertCircle 

@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { 
-  Check, 
-  Sparkles, 
-  ShieldCheck, 
+  Check,
+  Tag,
+  ShieldCheck,
   Smartphone, 
   CreditCard, 
   Feather, 
@@ -345,7 +345,7 @@ export const PricingScreen: React.FC<PricingScreenProps> = ({
       {/* Header Section */}
       <div className="text-center max-w-2xl mx-auto mb-10 sm:mb-14 space-y-3.5">
         <div className="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-[#EEF2FF] border border-[#2B4DE8]/20 text-xs font-semibold text-[#2B4DE8] shadow-2xs">
-          <Sparkles className="w-3.5 h-3.5 text-[#2B4DE8]" />
+          <Tag className="w-3.5 h-3.5 text-[#2B4DE8]" />
           <span>Offres &amp; Formules Éditoriales Sileyabook</span>
         </div>
         
@@ -404,7 +404,7 @@ export const PricingScreen: React.FC<PricingScreenProps> = ({
                       ? 'bg-[#2B4DE8] text-white border border-[#60A5FA]'
                       : 'bg-gradient-to-r from-[#FF7F00] to-[#F26A00] text-white border border-white/20'
                   }`}>
-                    <Sparkles className={`w-3.5 h-3.5 ${isSelected ? 'text-[#1877F2]' : 'text-white'}`} />
+                    <Award className={`w-3.5 h-3.5 ${isSelected ? 'text-[#1877F2]' : 'text-white'}`} />
                     <span>{offer.badge}</span>
                   </span>
                 </div>
@@ -559,7 +559,6 @@ export const PricingScreen: React.FC<PricingScreenProps> = ({
                       : 'bg-gradient-to-r from-[#2B4DE8] to-[#1B36C9] hover:from-[#1B36C9] hover:to-[#011CF6] text-white shadow-sonic hover:scale-105'
                   }`}
                 >
-                  <Sparkles className={`w-4 h-4 ${isSelected ? 'text-[#1877F2]' : 'text-white'}`} />
                   <span>{offer.ctaLabel}</span>
                   <ArrowRight className="w-4 h-4 ml-1" />
                 </button>

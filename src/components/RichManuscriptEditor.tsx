@@ -5,7 +5,6 @@ import {
   Trash2,
   Edit3,
   Loader2,
-  Sparkles,
   Layers,
   FileText,
   Eye,
