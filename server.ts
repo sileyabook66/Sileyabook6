@@ -8,6 +8,96 @@ import { generateCalibratedSubstantiveChapter } from "./src/lib/calibratedGenera
 
 dotenv.config({ quiet: true });
 
+// Minimal service-role Supabase REST/Auth client, implemented as plain
+// fetch() calls instead of @supabase/supabase-js. The SDK constructs a
+// Realtime client eagerly, which requires a native global WebSocket that
+// doesn't exist on Node <22 — a real problem here, but only server-side
+// (browsers have native WebSocket, so src/lib/supabaseClient.ts is fine
+// using the real SDK). We only need auth verification, simple selects,
+// one RPC call and one insert, so plain REST calls are simpler than
+// fighting the SDK's Realtime bootstrapping.
+const SUPABASE_URL = process.env.VITE_SUPABASE_URL as string;
+const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY as string;
+
+const supabaseAdmin = {
+  async getUserFromToken(token: string): Promise<{ id: string } | null> {
+    const res = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+      headers: { Authorization: `Bearer ${token}`, apikey: SERVICE_ROLE_KEY },
+    });
+    if (!res.ok) return null;
+    const user = await res.json();
+    return user?.id ? { id: user.id } : null;
+  },
+
+  async getProfileCredits(profileId: string): Promise<number | null> {
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(profileId)}&select=credits_pages`,
+      { headers: { Authorization: `Bearer ${SERVICE_ROLE_KEY}`, apikey: SERVICE_ROLE_KEY } }
+    );
+    if (!res.ok) return null;
+    const rows = await res.json();
+    return rows?.[0]?.credits_pages ?? null;
+  },
+
+  async applyCreditTransaction(params: {
+    profileId: string;
+    montant: number;
+    type: string;
+    ebookId?: string | null;
+    description?: string;
+  }): Promise<any> {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/apply_credit_transaction`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
+        apikey: SERVICE_ROLE_KEY,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        p_profile_id: params.profileId,
+        p_montant: params.montant,
+        p_type: params.type,
+        p_ebook_id: params.ebookId || null,
+        p_description: params.description || null,
+      }),
+    });
+    if (!res.ok) {
+      const errBody = await res.json().catch(() => ({}));
+      throw new Error(errBody.message || `apply_credit_transaction a échoué (${res.status})`);
+    }
+    return res.json();
+  },
+
+  async insertGenerationLog(row: Record<string, any>): Promise<void> {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/generation_logs`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
+        apikey: SERVICE_ROLE_KEY,
+        "Content-Type": "application/json",
+        Prefer: "return=minimal",
+      },
+      body: JSON.stringify(row),
+    });
+    if (!res.ok) {
+      const errText = await res.text().catch(() => "");
+      console.error("Erreur enregistrement generation_log (non bloquant) :", errText);
+    }
+  },
+};
+
+// Extracts and verifies the bearer JWT from the Authorization header,
+// returning the authenticated user's id. Never trust a client-supplied
+// profileId for anything that touches credits.
+async function getAuthenticatedUserId(req: express.Request): Promise<string | null> {
+  const authHeader = req.headers.authorization || "";
+  const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null;
+  if (!token) return null;
+
+  const user = await supabaseAdmin.getUserFromToken(token);
+  return user?.id || null;
+}
+
 // Sanitize CLOUDINARY_URL if present but missing the required protocol
 if (process.env.CLOUDINARY_URL && !process.env.CLOUDINARY_URL.startsWith("cloudinary://")) {
   delete process.env.CLOUDINARY_URL;
@@ -308,16 +398,43 @@ async function startServer() {
     }
   });
 
-  // In-memory credit transactions store on server
-  const serverCreditTransactions: Array<{
-    id: string;
-    profile_id: string;
-    montant: number;
-    type: "generation" | "bonus" | "achat";
-    description?: string;
-    ebook_id?: string;
-    created_at: string;
-  }> = [];
+  // Authoritative post-generation bookkeeping: debits the real balance via
+  // the apply_credit_transaction RPC (the only way credits_pages can ever
+  // change — see supabase/migrations/0001_auth_and_persistence.sql) and
+  // writes the generation_logs row. Both tables reject direct client
+  // writes via RLS, so this must run with the service-role key.
+  async function finalizeGeneration(params: {
+    profileId: string;
+    pages: number;
+    description: string;
+    ebookTitre: string;
+    sourceType: string;
+    sourceDetail: string;
+    tokensUsed: number;
+    modelUsed: string;
+    durationMs: number;
+  }) {
+    const transaction = await supabaseAdmin.applyCreditTransaction({
+      profileId: params.profileId,
+      montant: -params.pages,
+      type: "generation",
+      description: params.description,
+    });
+
+    await supabaseAdmin.insertGenerationLog({
+      profile_id: params.profileId,
+      ebook_titre: params.ebookTitre,
+      source_type: params.sourceType,
+      source_detail: params.sourceDetail,
+      pages_generees: params.pages,
+      tokens_utilises: params.tokensUsed,
+      model_used: params.modelUsed,
+      duration_ms: params.durationMs,
+      status: "success",
+    });
+
+    return transaction;
+  }
 
   // API Route: Credit Packs Catalogue Schema (Prepared for future purchase)
   const SERVER_CREDIT_PACKS = [
@@ -413,10 +530,46 @@ async function startServer() {
     });
   });
 
+  // API Route: Credit a positive amount to the caller's own balance
+  // (bonus grants, simulated Mobile Money purchases). Like generation
+  // debits, this must run server-side with the service-role key — the
+  // apply_credit_transaction RPC rejects direct calls from authenticated
+  // clients, so the browser can never legitimately credit itself.
+  app.post("/api/studio/credits/add", async (req, res) => {
+    const profileId = await getAuthenticatedUserId(req);
+    if (!profileId) {
+      return res.status(401).json({ error: "Authentification requise." });
+    }
+
+    const { pages, type, description } = req.body;
+    const montant = Number(pages);
+    if (!Number.isFinite(montant) || montant <= 0) {
+      return res.status(400).json({ error: "Le paramètre pages doit être un nombre positif." });
+    }
+    if (type !== "bonus" && type !== "achat") {
+      return res.status(400).json({ error: "Le paramètre type doit être 'bonus' ou 'achat'." });
+    }
+
+    try {
+      const transaction = await supabaseAdmin.applyCreditTransaction({
+        profileId,
+        montant,
+        type,
+        description,
+      });
+      res.json({ success: true, transaction });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message || "Échec du crédit de pages." });
+    }
+  });
+
   // API Route: Generation of book title, outline, and structured JSON content
   // Edge Function: generate-ebook (with pre-flight balance check BEFORE Gemini invocation)
   const handleGenerateEbook = async (req: express.Request, res: express.Response) => {
     const startTime = Date.now();
+    // Declared outside the try block so the catch handler below can still
+    // reach it (a `const` declared inside try is not visible in catch).
+    let profileId: string | null = null;
     try {
       const {
         sourceType,
@@ -429,13 +582,29 @@ async function startServer() {
         writingTone,
         estimatedPages = 15,
         language = "Français",
-        profileId = "usr-author-01",
-        creditsAvailable, // Optional balance provided in request for strict edge validation
       } = req.body;
 
       if (!sourceType) {
         return res.status(400).json({ error: "Le paramètre sourceType est requis." });
       }
+
+      // Identify the caller from their JWT — never trust a client-supplied
+      // profileId, since anyone could pass someone else's id to debit their
+      // account instead of their own.
+      profileId = await getAuthenticatedUserId(req);
+      if (!profileId) {
+        return res.status(401).json({ error: "Authentification requise." });
+      }
+
+      // Read the real balance from the database — replaces the old
+      // client-supplied `creditsAvailable` field, which was trusted as-is
+      // and therefore trivially falsifiable.
+      const dbCredits = await supabaseAdmin.getProfileCredits(profileId);
+      if (dbCredits === null) {
+        return res.status(404).json({ error: "Profil introuvable." });
+      }
+
+      const creditsAvailable = dbCredits;
 
       // Special handling for Mode "Mise en page" (sourceType === 'texte_utilisateur' or rawUserText)
       if (sourceType === "texte_utilisateur" || req.body.rawUserText) {
@@ -531,15 +700,17 @@ ${rawText}`;
         }
 
         const durationMs = Date.now() - startTime;
-        const transactionData = {
-          id: `ctx-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
-          profile_id: profileId,
-          montant: -calculatedPages,
-          type: "generation" as const,
+        const transactionData = await finalizeGeneration({
+          profileId,
+          pages: calculatedPages,
           description: `Mise en page texte auteur : ${structuredResult.titre} (${calculatedPages} p.)`,
-          created_at: new Date().toISOString(),
-        };
-        serverCreditTransactions.unshift(transactionData);
+          ebookTitre: structuredResult.titre,
+          sourceType: "texte_utilisateur",
+          sourceDetail: `Texte brut auteur (${totalWords} mots)`,
+          tokensUsed: Math.round(rawText.length / 3.5),
+          modelUsed: ai ? "gemini-3.7-flash (structuration-verbatim)" : "moteur-local-verbatim",
+          durationMs,
+        });
 
         return res.json({
           ...structuredResult,
@@ -656,15 +827,17 @@ Génère une réponse strictement structurée en JSON selon le schéma demandé 
         const actualPages = simulatedBook.contenu?.metadata?.pages_estimees || requiredCredits;
         const durationMs = Date.now() - startTime;
 
-        const transactionData = {
-          id: `ctx-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
-          profile_id: profileId,
-          montant: -actualPages,
-          type: "generation" as const,
+        const transactionData = await finalizeGeneration({
+          profileId,
+          pages: actualPages,
           description: `Génération manuscrit : ${simulatedBook.titre}`,
-          created_at: new Date().toISOString(),
-        };
-        serverCreditTransactions.unshift(transactionData);
+          ebookTitre: simulatedBook.titre,
+          sourceType,
+          sourceDetail: youtubeUrl || fileName || (promptText ? promptText.slice(0, 80) : "Source personnalisée"),
+          tokensUsed: 4250,
+          modelUsed: "gemini-3.7-flash (simulation)",
+          durationMs,
+        });
 
         return res.json({
           ...simulatedBook,
@@ -905,15 +1078,17 @@ Génère une réponse strictement structurée en JSON selon le schéma demandé 
       // Estimate tokens
       const estimatedTokens = Math.round((responseText.length + userPrompt.length) / 3.8);
 
-      const transactionData = {
-        id: `ctx-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
-        profile_id: profileId,
-        montant: -actualPages,
-        type: "generation" as const,
+      const transactionData = await finalizeGeneration({
+        profileId,
+        pages: actualPages,
         description: `Génération manuscrit : ${parsedData.titre || "Livre"}`,
-        created_at: new Date().toISOString(),
-      };
-      serverCreditTransactions.unshift(transactionData);
+        ebookTitre: parsedData.titre || "Livre",
+        sourceType,
+        sourceDetail: youtubeUrl || fileName || (promptText ? promptText.slice(0, 80) : "Source personnalisée"),
+        tokensUsed: estimatedTokens,
+        modelUsed: usedModel,
+        durationMs,
+      });
 
       return res.json({
         ...parsedData,
@@ -929,20 +1104,35 @@ Génère une réponse strictement structurée en JSON selon le schéma demandé 
       });
     } catch (err: any) {
       console.error("Erreur lors de la génération Gemini Studio:", err);
+
+      if (!profileId) {
+        // Auth was never established (e.g. the failure happened before or
+        // during the JWT check) — nothing to bill or log against.
+        return res.status(401).json({ error: "Authentification requise." });
+      }
+
       // If error occurs, fall back gracefully
       const durationMs = Date.now() - startTime;
       const fallback = generateFallbackManuscrit(req.body);
       const actualPages = fallback.contenu?.metadata?.pages_estimees || Number(req.body.estimatedPages) || 15;
 
-      const transactionData = {
-        id: `ctx-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
-        profile_id: req.body.profileId || "usr-author-01",
-        montant: -actualPages,
-        type: "generation" as const,
-        description: `Génération manuscrit : ${fallback.titre}`,
-        created_at: new Date().toISOString(),
-      };
-      serverCreditTransactions.unshift(transactionData);
+      let transactionData;
+      try {
+        transactionData = await finalizeGeneration({
+          profileId,
+          pages: actualPages,
+          description: `Génération manuscrit : ${fallback.titre}`,
+          ebookTitre: fallback.titre,
+          sourceType: req.body.sourceType || "prompt",
+          sourceDetail: req.body.youtubeUrl || req.body.fileName || (req.body.promptText ? String(req.body.promptText).slice(0, 80) : "Source personnalisée"),
+          tokensUsed: 3800,
+          modelUsed: "gemini-3.7-flash (mode résilience)",
+          durationMs,
+        });
+      } catch (billingErr: any) {
+        console.error("Échec du décompte de crédits en mode résilience :", billingErr);
+        return res.status(402).json({ error: billingErr.message || "Échec du décompte de crédits." });
+      }
 
       return res.json({
         ...fallback,

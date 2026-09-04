@@ -102,20 +102,20 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
   }, [ebooks, statusFilter, searchQuery]);
 
   // Action handlers
-  const handleDuplicate = (e: React.MouseEvent, ebook: Ebook) => {
+  const handleDuplicate = async (e: React.MouseEvent, ebook: Ebook) => {
     e.stopPropagation();
-    const dup = storage.duplicateEbook(ebook.id);
+    const dup = await storage.duplicateEbook(ebook.id, profile.id);
     if (dup) {
-      const updated = storage.getEbooks();
+      const updated = await storage.getEbooks(profile.id);
       onEbooksChanged(updated);
       showNotification(`Manuscrit « ${ebook.titre} » dupliqué en brouillon.`);
     }
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (!ebookToDelete) return;
-    storage.deleteEbook(ebookToDelete.id);
-    const updated = storage.getEbooks();
+    await storage.deleteEbook(ebookToDelete.id);
+    const updated = await storage.getEbooks(profile.id);
     onEbooksChanged(updated);
     showNotification(`Manuscrit « ${ebookToDelete.titre} » supprimé.`, 'info');
     setEbookToDelete(null);
@@ -722,10 +722,11 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
           isOpen={true}
           onClose={() => setExportModalEbook(null)}
           ebook={exportModalEbook}
+          profileId={profile.id}
           defaultAuthor={profile.name}
-          onEbookUpdated={(updated) => {
+          onEbookUpdated={async (updated) => {
             setExportModalEbook(updated);
-            const list = storage.getEbooks();
+            const list = await storage.getEbooks(profile.id);
             onEbooksChanged(list);
           }}
         />

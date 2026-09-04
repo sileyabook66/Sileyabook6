@@ -22,7 +22,6 @@ import {
 import { Ebook } from '../types';
 import { exportEbookToPdf, exportCoverToPng, PdfExportOptions } from '../lib/pdfExporter';
 import { exportEbookToEpub } from '../lib/epubExporter';
-import { storage } from '../lib/storage';
 import { KdpFullCoverModal } from './KdpFullCoverModal';
 
 export type CoverThemeId = 'velin' | 'carmin' | 'nuit' | 'emeraude' | 'blanche';
@@ -147,8 +146,9 @@ export const BookCoverPreview: React.FC<BookCoverPreviewProps> = ({
   onExportPdf,
   onOpenExportCenter,
 }) => {
-  const initialAuthor = defaultAuthor || storage.getProfile().name || 'mw.barryy@gmail.com';
-  
+  const initialAuthor = defaultAuthor || 'Auteur du Manuscrit';
+
+
   const [authorName, setAuthorName] = useState<string>(initialAuthor);
   const [selectedTheme, setSelectedTheme] = useState<CoverThemeId>('velin');
   const [selectedEmblem, setSelectedEmblem] = useState<EmblemId>('feather');

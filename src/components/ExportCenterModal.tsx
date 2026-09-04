@@ -44,6 +44,7 @@ interface ExportCenterModalProps {
   isOpen: boolean;
   onClose: () => void;
   ebook: Ebook;
+  profileId: string;
   defaultAuthor?: string;
   onEbookUpdated?: (updatedEbook: Ebook) => void;
   onOpenSocialQuote?: (text?: string, source?: string) => void;
@@ -53,6 +54,7 @@ export const ExportCenterModal: React.FC<ExportCenterModalProps> = ({
   isOpen,
   onClose,
   ebook,
+  profileId,
   defaultAuthor = 'Auteur du Manuscrit',
   onEbookUpdated,
   onOpenSocialQuote,
@@ -265,7 +267,7 @@ export const ExportCenterModal: React.FC<ExportCenterModalProps> = ({
         updated_at: new Date().toISOString(),
       };
 
-      storage.saveEbook(updatedEbook);
+      await storage.saveEbook(updatedEbook, profileId);
       setCurrentStatut('published');
 
       if (onEbookUpdated) {

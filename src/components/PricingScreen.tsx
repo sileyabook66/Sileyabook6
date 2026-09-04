@@ -24,7 +24,6 @@ import {
   Award
 } from 'lucide-react';
 import { UserProfile } from '../types';
-import { storage } from '../lib/storage';
 
 export interface PricingOffer {
   id: 'mise-en-page' | 'mise-en-page-couverture' | 'creation-complete';
@@ -308,13 +307,6 @@ export const PricingScreen: React.FC<PricingScreenProps> = ({
       setIsProcessing(false);
       const orderId = `CMD-${selectedCountry.code}-${Date.now().toString().slice(-6)}`;
       const nowIso = new Date().toISOString();
-
-      // Credit corresponding pages quota to profile and record transaction
-      const description = `Formule Sileyabook « ${selectedOffer.titre} » (${selectedOffer.prixFormate}) — Payé via ${selectedOperator} (${selectedCountry.dialCode} ${cleanPhone})`;
-      storage.addCredits(selectedOffer.equivalentPages, {
-        type: 'achat',
-        description,
-      });
 
       const successData = {
         offer: selectedOffer,

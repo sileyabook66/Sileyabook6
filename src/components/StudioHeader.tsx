@@ -2,14 +2,15 @@ import React from 'react';
 import {
   BookOpen,
   PlusCircle,
-  History, 
-  Feather, 
-  ShieldCheck, 
-  Key, 
-  LayoutDashboard, 
+  History,
+  Feather,
+  ShieldCheck,
+  Key,
+  LayoutDashboard,
   PenTool,
   Layers,
-  Tag
+  Tag,
+  LogOut
 } from 'lucide-react';
 import { UserProfile } from '../types';
 
@@ -24,6 +25,7 @@ interface StudioHeaderProps {
   onOpenLogs: () => void;
   onOpenDraftsList: () => void;
   hasDedicatedKey?: boolean;
+  onSignOut?: () => void;
 }
 
 export const StudioHeader: React.FC<StudioHeaderProps> = ({
@@ -37,6 +39,7 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
   onOpenLogs,
   onOpenDraftsList,
   hasDedicatedKey,
+  onSignOut,
 }) => {
   return (
     <header className="w-full bg-white border-b border-[#E7EAF3] sticky top-0 z-30 shadow-xs">
@@ -194,6 +197,18 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
               <Tag className="w-3.5 h-3.5 text-white" />
               <span className="hidden sm:inline">Nos Offres</span>
             </button>
+
+            {/* Sign out */}
+            {onSignOut && (
+              <button
+                onClick={onSignOut}
+                className="p-2 rounded-lg text-[#8089A6] hover:text-[#8C2D19] hover:bg-red-50 transition-colors shrink-0"
+                title="Se déconnecter"
+                aria-label="Se déconnecter"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+            )}
 
           </div>
 

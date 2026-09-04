@@ -35,7 +35,7 @@ import {
   ShieldCheck,
   Split
 } from 'lucide-react';
-import { Ebook, Chapter } from '../types';
+import { Ebook, Chapter, UserProfile } from '../types';
 import { exportEbookToPdf, exportEbookToPdfAsync, exportCoverToPng, PdfExportOptions } from '../lib/pdfExporter';
 import { exportEbookToEpub } from '../lib/epubExporter';
 import { BookCoverPreview } from './BookCoverPreview';
@@ -55,16 +55,18 @@ import { storage } from '../lib/storage';
 
 interface ManuscriptViewerProps {
   ebook: Ebook;
+  profile: UserProfile;
   onNewGeneration: () => void;
   onNavigateToDashboard?: () => void;
   onEbookUpdated?: (updatedEbook: Ebook) => void;
 }
 
-export const ManuscriptViewer: React.FC<ManuscriptViewerProps> = ({ 
-  ebook: initialEbook, 
+export const ManuscriptViewer: React.FC<ManuscriptViewerProps> = ({
+  ebook: initialEbook,
+  profile: userProfile,
   onNewGeneration,
   onNavigateToDashboard,
-  onEbookUpdated 
+  onEbookUpdated
 }) => {
   const [currentEbook, setCurrentEbook] = useState<Ebook>(initialEbook);
   const [activeTab, setActiveTab] = useState<'manuscript' | 'cover' | 'outline' | 'json'>('manuscript');
@@ -131,7 +133,6 @@ export const ManuscriptViewer: React.FC<ManuscriptViewerProps> = ({
   const chapters = currentEbook.contenu.chapitres || [];
   const safeChapterIdx = Math.min(Math.max(0, selectedChapterIdx), Math.max(0, chapters.length - 1));
   const currentChapter: Chapter | undefined = chapters[safeChapterIdx];
-  const userProfile = storage.getProfile();
 
   useEffect(() => {
     if (selectedChapterIdx >= chapters.length && chapters.length > 0) {
@@ -255,7 +256,7 @@ export const ManuscriptViewer: React.FC<ManuscriptViewerProps> = ({
     };
 
     handleEbookUpdate(updatedEbook);
-    storage.saveEbook(updatedEbook);
+    storage.saveEbook(updatedEbook, userProfile.id).catch(console.error);
     setSelectedChapterIdx(updatedChapters.length - 1);
     setAnnouncement(`Nouveau chapitre calibré ajouté : ${newChapter.titre}`);
   };
@@ -289,7 +290,7 @@ export const ManuscriptViewer: React.FC<ManuscriptViewerProps> = ({
     };
 
     handleEbookUpdate(updatedEbook);
-    storage.saveEbook(updatedEbook);
+    storage.saveEbook(updatedEbook, userProfile.id).catch(console.error);
     setAnnouncement(`Le chapitre a été scindé en ${splitResults.length} parties pour respecter le plafond de 5 pages A5.`);
   };
 
@@ -466,7 +467,7 @@ export const ManuscriptViewer: React.FC<ManuscriptViewerProps> = ({
     };
 
     handleEbookUpdate(updatedEbook);
-    storage.saveEbook(updatedEbook);
+    storage.saveEbook(updatedEbook, userProfile.id).catch(console.error);
   };
 
   return (
@@ -1535,6 +1536,7 @@ export const ManuscriptViewer: React.FC<ManuscriptViewerProps> = ({
         isOpen={isExportCenterOpen}
         onClose={() => setIsExportCenterOpen(false)}
         ebook={currentEbook}
+        profileId={userProfile.id}
         defaultAuthor={userProfile.name}
         onEbookUpdated={handleEbookUpdate}
         onOpenSocialQuote={(txt, src) => handleOpenSocialQuote(txt, src)}
@@ -1584,7 +1586,7 @@ export const ManuscriptViewer: React.FC<ManuscriptViewerProps> = ({
         ebook={currentEbook}
         onSave={(updated) => {
           handleEbookUpdate(updated);
-          storage.saveEbook(updated);
+          storage.saveEbook(updated, userProfile.id).catch(console.error);
         }}
       />
 
@@ -1595,7 +1597,7 @@ export const ManuscriptViewer: React.FC<ManuscriptViewerProps> = ({
         ebook={currentEbook}
         onEbookUpdated={(updated) => {
           handleEbookUpdate(updated);
-          storage.saveEbook(updated);
+          storage.saveEbook(updated, userProfile.id).catch(console.error);
         }}
       />
 
@@ -1614,7 +1616,7 @@ export const ManuscriptViewer: React.FC<ManuscriptViewerProps> = ({
         ebook={currentEbook}
         onEbookUpdated={(updated) => {
           handleEbookUpdate(updated);
-          storage.saveEbook(updated);
+          storage.saveEbook(updated, userProfile.id).catch(console.error);
         }}
       />
 
@@ -1629,7 +1631,7 @@ export const ManuscriptViewer: React.FC<ManuscriptViewerProps> = ({
             cover_theme: title || currentEbook.cover_theme
           };
           handleEbookUpdate(updated);
-          storage.saveEbook(updated);
+          storage.saveEbook(updated, userProfile.id).catch(console.error);
         }}
       />
 

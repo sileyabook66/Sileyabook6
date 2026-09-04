@@ -16,23 +16,35 @@ import { MentionsLegalesPage } from './components/legal/MentionsLegalesPage';
 import { CguPage } from './components/legal/CguPage';
 import { RemboursementPage } from './components/legal/RemboursementPage';
 import { ConfidentialitePage } from './components/legal/ConfidentialitePage';
+import { AuthScreen } from './components/AuthScreen';
+import { AuthProvider, useAuth } from './lib/auth';
+import { supabase } from './lib/supabaseClient';
 import { storage } from './lib/storage';
 import { Ebook, GenerationLog, SourceInputData, UserProfile, CreditTransaction } from './types';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, Feather } from 'lucide-react';
 
-export default function App() {
-  const [profile, setProfile] = useState<UserProfile>(() => storage.getProfile());
-  const [ebooks, setEbooks] = useState<Ebook[]>(() => storage.getEbooks());
-  const [logs, setLogs] = useState<GenerationLog[]>(() => storage.getGenerationLogs());
-  const [transactions, setTransactions] = useState<CreditTransaction[]>(() => storage.getTransactions());
-  
-  // URL Routing State
-  const [currentPath, setCurrentPath] = useState<string>(() => {
-    if (typeof window !== 'undefined') {
-      return window.location.pathname || '/';
-    }
-    return '/';
-  });
+function LoadingScreen() {
+  return (
+    <div className="min-h-screen bg-[#F8F6F0] flex items-center justify-center">
+      <div className="flex flex-col items-center space-y-3">
+        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#2B4DE8] to-[#1B36C9] text-white flex items-center justify-center animate-pulse">
+          <Feather className="w-5 h-5" />
+        </div>
+        <p className="text-xs text-[#8089A6] font-poppins">Chargement…</p>
+      </div>
+    </div>
+  );
+}
+
+function StudioApp({ userId, currentPath, navigateTo }: { userId: string; currentPath: string; navigateTo: (path: string) => void }) {
+  const { signOut } = useAuth();
+
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [ebooks, setEbooks] = useState<Ebook[]>([]);
+  const [logs, setLogs] = useState<GenerationLog[]>([]);
+  const [transactions, setTransactions] = useState<CreditTransaction[]>([]);
+  const [isLoadingData, setIsLoadingData] = useState(true);
+  const [dataError, setDataError] = useState<string | null>(null);
 
   const [activeTab, setActiveTab] = useState<'dashboard' | 'studio' | 'tarifs'>(() => {
     if (typeof window !== 'undefined') {
@@ -46,22 +58,8 @@ export default function App() {
 
   const [isGenerating, setIsGenerating] = useState(false);
   const [activeSourceData, setActiveSourceData] = useState<SourceInputData | null>(null);
-  const [activeEbook, setActiveEbook] = useState<Ebook | null>(() => {
-    if (typeof window !== 'undefined') {
-      const path = window.location.pathname || '/';
-      if (path === '/tarifs' || path === '/prix') return null;
-      const urlParams = new URLSearchParams(window.location.search);
-      const ebookParam = urlParams.get('ebook');
-      const all = storage.getEbooks();
-      if (ebookParam) {
-        const found = all.find((b) => b.id === ebookParam);
-        if (found) return found;
-      }
-      return null;
-    }
-    return null;
-  });
-  
+  const [activeEbook, setActiveEbook] = useState<Ebook | null>(null);
+
   const [isUpgradeOpen, setIsUpgradeOpen] = useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [isCoverGalleryOpen, setIsCoverGalleryOpen] = useState(false);
@@ -70,24 +68,55 @@ export default function App() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [hasDedicatedKey, setHasDedicatedKey] = useState(true);
 
-  // Synchronize browser history and popstate for deep-linking
+  // Initial data load for the authenticated user
   useEffect(() => {
-    const handlePopState = () => {
-      const path = window.location.pathname || '/';
-      setCurrentPath(path);
-      if (path === '/tarifs' || path === '/prix') {
-        setActiveTab('tarifs');
-        setActiveEbook(null);
-      } else if (path === '/studio' || path.startsWith('/studio')) {
-        setActiveTab('studio');
-      } else {
-        setActiveTab('dashboard');
-      }
-    };
+    let cancelled = false;
+    setIsLoadingData(true);
+    setDataError(null);
 
-    window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
-  }, []);
+    Promise.all([
+      storage.getProfile(userId),
+      storage.getEbooks(userId),
+      storage.getGenerationLogs(userId),
+      storage.getTransactions(userId),
+    ])
+      .then(([p, eb, lg, tx]) => {
+        if (cancelled) return;
+        setProfile(p);
+        setEbooks(eb);
+        setLogs(lg);
+        setTransactions(tx);
+
+        // Support direct ebook opening via URL query parameter
+        const urlParams = new URLSearchParams(window.location.search);
+        const ebookParam = urlParams.get('ebook');
+        if (ebookParam) {
+          const found = eb.find((b) => b.id === ebookParam);
+          if (found) setActiveEbook(found);
+        }
+      })
+      .catch((err) => {
+        if (!cancelled) setDataError(err.message || 'Impossible de charger vos données.');
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoadingData(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [userId]);
+
+  // Sync the active tab whenever the (lifted, App-level) currentPath changes
+  useEffect(() => {
+    if (currentPath === '/tarifs' || currentPath === '/prix') {
+      setActiveTab('tarifs');
+    } else if (currentPath === '/studio' || currentPath.startsWith('/studio')) {
+      setActiveTab('studio');
+    } else if (currentPath === '/dashboard' || currentPath === '/' || currentPath === '/vitrine' || currentPath === '/maquette') {
+      setActiveTab('dashboard');
+    }
+  }, [currentPath]);
 
   useEffect(() => {
     // Check server key status
@@ -99,48 +128,18 @@ export default function App() {
       .catch(() => {});
   }, []);
 
-  // Support direct ebook opening via URL query parameter
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const urlParams = new URLSearchParams(window.location.search);
-      const ebookParam = urlParams.get('ebook');
-      if (ebookParam) {
-        const found = ebooks.find((b) => b.id === ebookParam);
-        if (found) {
-          setActiveEbook(found);
-        }
-      }
-    }
-  }, [ebooks]);
-
-  const navigateTo = (path: string) => {
-    if (typeof window !== 'undefined') {
-      window.history.pushState({}, '', path);
-      setCurrentPath(path);
-      if (path === '/tarifs' || path === '/prix') {
-        setActiveTab('tarifs');
-        setActiveEbook(null);
-      } else if (path === '/studio' || path.startsWith('/studio')) {
-        setActiveTab('studio');
-      } else if (path === '/dashboard' || path === '/' || path === '/vitrine' || path === '/maquette') {
-        setActiveTab('dashboard');
-        setActiveEbook(null);
-      }
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-  };
-
-  const handleAddCredits = (amount: number, type: 'bonus' | 'achat' = 'bonus', description?: string) => {
-    const updated = storage.addCredits(amount, { type, description });
+  const handleAddCredits = async (amount: number, type: 'bonus' | 'achat' = 'bonus', description?: string) => {
+    const updated = await storage.addCredits(userId, amount, { type, description });
     setProfile(updated);
-    setTransactions(storage.getTransactions());
+    setTransactions(await storage.getTransactions(userId));
   };
 
   const handleGenerate = async (data: SourceInputData) => {
+    if (!profile) return;
     setErrorMessage(null);
     const estimatedPages = data.estimatedPages || 35;
 
-    // Pre-flight Balance Verification
+    // Pre-flight Balance Verification (server re-verifies authoritatively too)
     if (profile.credits_pages < estimatedPages) {
       setErrorMessage(`Solde insuffisant : il vous reste ${profile.credits_pages} pages de vélin, alors que ${estimatedPages} pages sont requises.`);
       setIsUpgradeOpen(true);
@@ -154,16 +153,16 @@ export default function App() {
     const startTime = Date.now();
 
     try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData.session?.access_token;
+
       const response = await fetch('/api/studio/generate-ebook', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
         },
-        body: JSON.stringify({
-          ...data,
-          profileId: profile.id,
-          creditsAvailable: profile.credits_pages,
-        }),
+        body: JSON.stringify(data),
       });
 
       if (!response.ok) {
@@ -182,65 +181,39 @@ export default function App() {
       }
 
       const actualPages = generatedData.credits_consommes || generatedData.contenu?.metadata?.pages_estimees || estimatedPages;
-      const ebookId = `ebk-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
-      const nowIso = new Date().toISOString();
 
       const sourceDetail = data.sourceType === 'texte_utilisateur'
         ? `Texte brut auteur (${data.rawUserText?.split(/\s+/).filter(Boolean).length || 0} mots)`
         : (data.youtubeUrl || data.fileName || data.promptText?.slice(0, 80) || "Source personnalisée");
 
-      const newEbook: Ebook = {
-        id: ebookId,
-        titre: generatedData.titre || data.userBookTitle || "Manuscrit sans titre",
-        sous_titre: generatedData.sous_titre || data.userBookSubtitle || "",
-        description: generatedData.description || "",
-        statut: 'draft',
-        source_type: data.sourceType,
-        source_detail: sourceDetail,
-        plan: generatedData.plan || [],
-        contenu: generatedData.contenu,
-        credits_consommes: actualPages,
-        created_at: nowIso,
-        updated_at: nowIso,
-      };
+      // The server already verified balance, called Gemini, deducted credits
+      // (via apply_credit_transaction) and wrote the generation log. The
+      // client now just persists the generated ebook itself (RLS permits
+      // an authenticated user to insert their own ebooks directly).
+      const savedEbook = await storage.saveEbook(
+        {
+          id: '',
+          titre: generatedData.titre || data.userBookTitle || "Manuscrit sans titre",
+          sous_titre: generatedData.sous_titre || data.userBookSubtitle || "",
+          description: generatedData.description || "",
+          statut: 'draft',
+          source_type: data.sourceType,
+          source_detail: sourceDetail,
+          plan: generatedData.plan || [],
+          contenu: generatedData.contenu,
+          credits_consommes: actualPages,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        },
+        userId
+      );
 
-      const deductionDesc = data.sourceType === 'texte_utilisateur'
-        ? `Mise en page texte auteur « ${newEbook.titre} »`
-        : `Génération manuscrit « ${newEbook.titre} »`;
+      setEbooks(await storage.getEbooks(userId));
+      setProfile(await storage.getProfile(userId));
+      setTransactions(await storage.getTransactions(userId));
+      setLogs(await storage.getGenerationLogs(userId));
 
-      const deduction = storage.deductCredits(actualPages, {
-        ebookId: newEbook.id,
-        description: deductionDesc,
-      });
-
-      if (!deduction.success) {
-        console.warn("Avertissement de décompte:", deduction.error);
-      }
-
-      setProfile(storage.getProfile());
-      setTransactions(storage.getTransactions());
-
-      storage.saveEbook(newEbook);
-      setEbooks(storage.getEbooks());
-
-      const newLog: GenerationLog = {
-        id: `log-${Date.now()}`,
-        ebook_id: ebookId,
-        ebook_titre: newEbook.titre,
-        date: nowIso,
-        source_type: data.sourceType,
-        source_detail: newEbook.source_detail,
-        pages_generees: actualPages,
-        tokens_utilises: generatedData.meta?.tokensUsed || 3500,
-        model_used: generatedData.meta?.modelUsed || "gemini-3.7-flash (GEMINI_API_KEY_STUDIO)",
-        duration_ms: Date.now() - startTime,
-        status: 'success',
-      };
-
-      storage.addGenerationLog(newLog);
-      setLogs(storage.getGenerationLogs());
-
-      setActiveEbook(newEbook);
+      setActiveEbook(savedEbook);
     } catch (err: any) {
       console.error("Erreur de génération :", err);
       setErrorMessage(err.message || "Une erreur est survenue pendant la génération du manuscrit.");
@@ -292,47 +265,10 @@ export default function App() {
     handleAddCredits(offer.equivalentPages, 'achat', `Formule Sileyabook ${offer.titre} [${orderId}]`);
   };
 
-  // Check if current URL is one of the 4 public legal pages
-  const isLegalMentions = currentPath === '/mentions-legales' || currentPath.startsWith('/mentions-legales');
-  const isLegalCgu = currentPath === '/cgu' || currentPath.startsWith('/cgu');
-  const isLegalRemboursement = currentPath === '/remboursement' || currentPath.startsWith('/remboursement');
-  const isLegalConfidentialite = currentPath === '/confidentialite' || currentPath.startsWith('/confidentialite');
   const isTarifsPage = currentPath === '/tarifs' || currentPath === '/prix' || currentPath.startsWith('/tarifs') || currentPath.startsWith('/prix') || activeTab === 'tarifs';
 
-  if (isLegalMentions) {
-    return (
-      <div className="min-h-screen flex flex-col justify-between bg-[#F8F6F0]">
-        <MentionsLegalesPage onNavigate={navigateTo} />
-        <SiteFooter onNavigate={navigateTo} />
-      </div>
-    );
-  }
-
-  if (isLegalCgu) {
-    return (
-      <div className="min-h-screen flex flex-col justify-between bg-[#F8F6F0]">
-        <CguPage onNavigate={navigateTo} />
-        <SiteFooter onNavigate={navigateTo} />
-      </div>
-    );
-  }
-
-  if (isLegalRemboursement) {
-    return (
-      <div className="min-h-screen flex flex-col justify-between bg-[#F8F6F0]">
-        <RemboursementPage onNavigate={navigateTo} />
-        <SiteFooter onNavigate={navigateTo} />
-      </div>
-    );
-  }
-
-  if (isLegalConfidentialite) {
-    return (
-      <div className="min-h-screen flex flex-col justify-between bg-[#F8F6F0]">
-        <ConfidentialitePage onNavigate={navigateTo} />
-        <SiteFooter onNavigate={navigateTo} />
-      </div>
-    );
+  if (isLoadingData || !profile) {
+    return <LoadingScreen />;
   }
 
   const currentHeaderView = isGenerating
@@ -345,7 +281,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-[#F8F6F0] text-[#22211E] flex flex-col antialiased selection:bg-[#E8DCC4] selection:text-[#1F1E1B]">
-      
+
       {/* Studio Header Navigation */}
       <StudioHeader
         profile={profile}
@@ -354,25 +290,25 @@ export default function App() {
         onNavigateToStudio={handleNavigateToStudio}
         onNavigateToTarifs={handleNavigateToTarifs}
         onOpenActiveEbook={() => {
-          const all = storage.getEbooks();
-          setActiveEbook(all[0] || null);
+          setActiveEbook(ebooks[0] || null);
         }}
         onOpenUpgrade={() => setIsUpgradeOpen(true)}
         onOpenLogs={() => setIsLogsOpen(true)}
         onOpenDraftsList={() => setIsDraftsOpen(true)}
         hasDedicatedKey={hasDedicatedKey}
+        onSignOut={signOut}
       />
 
       {/* Main Content Area with safe mobile bottom margin */}
       <main className="flex-1 min-w-0 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-3 sm:py-6 pb-24 md:pb-8">
-        
+
         {/* Error notification banner */}
-        {errorMessage && (
+        {(errorMessage || dataError) && (
           <div className="max-w-4xl mx-auto mb-4 p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-900 flex items-start space-x-3 shadow-2xs">
             <AlertCircle className="w-5 h-5 text-red-700 shrink-0 mt-0.5" />
             <div className="space-y-1">
-              <span className="text-xs font-bold uppercase tracking-wider">Erreur de composition</span>
-              <p className="text-xs leading-relaxed">{errorMessage}</p>
+              <span className="text-xs font-bold uppercase tracking-wider">{dataError ? 'Erreur de chargement' : 'Erreur de composition'}</span>
+              <p className="text-xs leading-relaxed">{errorMessage || dataError}</p>
             </div>
           </div>
         )}
@@ -384,13 +320,14 @@ export default function App() {
 
         {/* View 2: Completed Manuscript Reader View */}
         {!isGenerating && activeEbook && (
-          <ManuscriptViewer 
-            ebook={activeEbook} 
+          <ManuscriptViewer
+            ebook={activeEbook}
+            profile={profile}
             onNewGeneration={handleResetToNew}
             onNavigateToDashboard={handleNavigateToDashboard}
-            onEbookUpdated={(updated) => {
+            onEbookUpdated={async (updated) => {
               setActiveEbook(updated);
-              setEbooks(storage.getEbooks());
+              setEbooks(await storage.getEbooks(userId));
             }}
           />
         )}
@@ -464,12 +401,12 @@ export default function App() {
         isOpen={isCoverGalleryOpen}
         onClose={() => setIsCoverGalleryOpen(false)}
         ebook={activeEbook || undefined}
-        onSelectCover={(coverUrl, title) => {
+        onSelectCover={async (coverUrl, title) => {
           if (activeEbook) {
             const updated = { ...activeEbook, cover_theme: title || activeEbook.cover_theme };
-            setActiveEbook(updated);
-            storage.saveEbook(updated);
-            setEbooks(storage.getEbooks());
+            const saved = await storage.saveEbook(updated, userId);
+            setActiveEbook(saved);
+            setEbooks(await storage.getEbooks(userId));
           }
         }}
       />
@@ -494,5 +431,88 @@ export default function App() {
       <SiteFooter onNavigate={navigateTo} />
 
     </div>
+  );
+}
+
+function AuthGate({ currentPath, navigateTo }: { currentPath: string; navigateTo: (path: string) => void }) {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return <LoadingScreen />;
+  }
+
+  if (!user) {
+    return <AuthScreen />;
+  }
+
+  return <StudioApp userId={user.id} currentPath={currentPath} navigateTo={navigateTo} />;
+}
+
+export default function App() {
+  // URL routing state lives here, above auth, so the public legal pages
+  // stay reachable without a session.
+  const [currentPath, setCurrentPath] = useState<string>(() => (
+    typeof window !== 'undefined' ? (window.location.pathname || '/') : '/'
+  ));
+
+  useEffect(() => {
+    const handlePopState = () => setCurrentPath(window.location.pathname || '/');
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  const navigateTo = (path: string) => {
+    if (typeof window !== 'undefined') {
+      window.history.pushState({}, '', path);
+      setCurrentPath(path);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  const isLegalMentions = currentPath === '/mentions-legales' || currentPath.startsWith('/mentions-legales');
+  const isLegalCgu = currentPath === '/cgu' || currentPath.startsWith('/cgu');
+  const isLegalRemboursement = currentPath === '/remboursement' || currentPath.startsWith('/remboursement');
+  const isLegalConfidentialite = currentPath === '/confidentialite' || currentPath.startsWith('/confidentialite');
+
+  if (isLegalMentions) {
+    return (
+      <div className="min-h-screen flex flex-col justify-between bg-[#F8F6F0]">
+        <MentionsLegalesPage onNavigate={navigateTo} />
+        <SiteFooter onNavigate={navigateTo} />
+      </div>
+    );
+  }
+
+  if (isLegalCgu) {
+    return (
+      <div className="min-h-screen flex flex-col justify-between bg-[#F8F6F0]">
+        <CguPage onNavigate={navigateTo} />
+        <SiteFooter onNavigate={navigateTo} />
+      </div>
+    );
+  }
+
+  if (isLegalRemboursement) {
+    return (
+      <div className="min-h-screen flex flex-col justify-between bg-[#F8F6F0]">
+        <RemboursementPage onNavigate={navigateTo} />
+        <SiteFooter onNavigate={navigateTo} />
+      </div>
+    );
+  }
+
+  if (isLegalConfidentialite) {
+    return (
+      <div className="min-h-screen flex flex-col justify-between bg-[#F8F6F0]">
+        <ConfidentialitePage onNavigate={navigateTo} />
+        <SiteFooter onNavigate={navigateTo} />
+      </div>
+    );
+  }
+
+  return (
+    <AuthProvider>
+      <AuthGate currentPath={currentPath} navigateTo={navigateTo} />
+    </AuthProvider>
   );
 }
