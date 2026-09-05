@@ -3,7 +3,7 @@ import path from "path";
 import dotenv from "dotenv";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI, Type } from "@google/genai";
-import { countChapterWords, calculateChapterA5Pages, getChapterMetrics, splitChapterIfExceedsLimit } from "./src/lib/textStructure";
+import { countChapterWords, calculateChapterA5Pages, getChapterMetrics, splitChapterIfExceedsLimit, analyzeChapterDuplication } from "./src/lib/textStructure";
 import { generateCalibratedSubstantiveChapter } from "./src/lib/calibratedGenerator";
 
 dotenv.config({ quiet: true });
@@ -158,6 +158,130 @@ function getGeminiStudioClient() {
       },
     },
   });
+}
+
+// Shared anti-generic / anti-fabrication rules, injected into every prompt
+// that asks Gemini to write chapter body content (main book generation,
+// single-chapter regeneration, and the manual "add chapter" endpoint).
+// Added after diagnosing that generated books could come back with
+// fabricated fictional-company case studies (invented statistics like
+// "42% de dégradation sur 18 mois") and identical section structure across
+// chapters — the model was never explicitly told not to invent examples,
+// and had no chapter-specific factual material to draw from besides a title.
+const ANTI_FABRICATION_RULES = `RÈGLES ANTI-GÉNÉRICITÉ ET ANTI-FABRICATION (STRICTES) :
+- INTERDICTION ABSOLUE d'inventer une entreprise fictive et son étude de cas (ex : "l'entreprise X a réduit ses coûts de Y % en Z mois"). N'invente aucun nom d'organisation, aucune statistique, aucun pourcentage, aucune durée chiffrée qui ne provienne pas explicitement de la source fournie.
+- Si tu n'as aucun fait vérifiable à citer pour illustrer une idée, n'utilise PAS d'exemple chiffré : développe l'idée elle-même en profondeur (mécanisme, raisonnement, implication pratique) plutôt que de fabriquer un cas.
+- Si tu cites un exemple concret, il doit soit provenir directement du contenu source fourni, soit être un cas réel, public et identifiable (personnalité, entreprise ou évènement connu) — jamais un cas anonyme ou inventé présenté comme réel.
+- N'utilise PAS la même structure de sections, les mêmes intitulés, ni les mêmes tournures de phrases d'un chapitre à l'autre : chaque chapitre doit être organisé selon ce que son propre sujet appelle naturellement, pas selon un gabarit fixe recopié.
+- Le contenu de chaque chapitre doit être écrit spécifiquement pour SON sujet exact (titre + description ci-dessous), en s'appuyant sur la matière fournie par l'utilisateur — ne rédige pas un texte générique qui pourrait être recyclé tel quel pour n'importe quel autre sujet en changeant seulement quelques mots.`;
+
+const SINGLE_CHAPTER_RESPONSE_SCHEMA = {
+  type: Type.OBJECT,
+  properties: {
+    titre: { type: Type.STRING },
+    resume: { type: Type.STRING },
+    objectifs: { type: Type.ARRAY, items: { type: Type.STRING } },
+    points_cles: { type: Type.ARRAY, items: { type: Type.STRING } },
+    sections: {
+      type: Type.ARRAY,
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          titre: { type: Type.STRING },
+          sous_titre: { type: Type.STRING },
+          paragraphes: { type: Type.ARRAY, items: { type: Type.STRING } },
+          callout: {
+            type: Type.OBJECT,
+            properties: {
+              type: { type: Type.STRING },
+              content: { type: Type.STRING },
+              author: { type: Type.STRING },
+            },
+          },
+        },
+        required: ["titre", "paragraphes"],
+      },
+    },
+    conclusion_chapitre: { type: Type.STRING },
+  },
+  required: ["titre", "resume", "sections", "conclusion_chapitre"],
+};
+
+const GEMINI_MODELS_TO_TRY = ["gemini-3.7-flash", "gemini-3.1-flash-lite", "gemini-flash-latest", "gemini-3.1-pro-preview"];
+
+// Generates (or regenerates) a single chapter's content through Gemini,
+// grounded in its specific plan title/description and the book's real
+// source material rather than the title alone. Returns null if every
+// model attempt fails, letting the caller fall back to the static
+// template generator as a last resort instead of the first resort.
+// Real Gemini calls for a ~2500-word structured chapter routinely take
+// 25-70+ seconds (confirmed via direct timing) — a prior 12s timeout on
+// the single-chapter endpoint meant every model attempt failed by design,
+// silently forcing 100% of individually-added chapters into the static
+// template. Replaced with a realistic 60s-per-model timeout here.
+async function generateChapterContentWithGemini(
+  ai: any,
+  params: {
+    subject: string;
+    contextDescription: string;
+    targetAudience?: string;
+    writingTone?: string;
+    language?: string;
+    chapterNumber: number;
+  }
+): Promise<any | null> {
+  if (!ai) return null;
+
+  const chapterSystemPrompt = `Tu es un maître écrivain et architecte éditorial d'exception pour Sileyabook Studio.
+CONSIGNES STRICTES DE LONGUEUR ET DE MISE EN PAGE :
+1. RÈGLE ÉDITORIALE ABSOLUE : NE génère PAS de résumé de chapitre, NI de citations isolées ou callouts. Le texte doit débuter directement par les sections et paragraphes.
+2. Chaque chapitre généré doit contenir environ 2500 mots (entre 2 350 et 2 650 mots au total, ni significativement moins, ni plus).
+3. Le calibrage typographique A5 est de 350 mots par page (environ 7 à 7,5 pages A5 par chapitre).
+4. Rédige au moins 4 sections substantielles et détaillées, chacune avec 4 à 6 paragraphes denses et documentés.
+
+${ANTI_FABRICATION_RULES}
+
+Langue de rédaction: ${params.language || "Français"}
+Public cible: ${params.targetAudience || "Praticiens et passionnés recherchant une maîtrise concrète"}
+Tonalité stylistique: ${params.writingTone || "didactique"}`;
+
+  const chapterUserPrompt = `Rédige un chapitre complet sur le sujet précis suivant :
+« ${params.subject.trim()} »
+
+Matière et contexte réels à exploiter pour ancrer le chapitre dans des faits spécifiques (ne te limite pas au titre ci-dessus) :
+${params.contextDescription}
+
+Respecte impérativement :
+- Pas de résumé ni de citations / callouts : rédaction fluide, directe et dense.
+- Volume : environ 2 500 mots réels de texte riche et substantiel (tolérance 2 350 à 2 650 mots).
+- Structure adaptée spécifiquement à ce sujet, pas un gabarit recopié d'un autre chapitre.
+
+Retourne un objet JSON strictement conforme au schéma.`;
+
+  for (const modelName of GEMINI_MODELS_TO_TRY) {
+    try {
+      const callPromise = ai.models.generateContent({
+        model: modelName,
+        contents: chapterUserPrompt,
+        config: {
+          systemInstruction: chapterSystemPrompt,
+          responseMimeType: "application/json",
+          maxOutputTokens: 16384,
+          responseSchema: SINGLE_CHAPTER_RESPONSE_SCHEMA,
+        },
+      });
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error(`Timeout de génération avec ${modelName}`)), 60000)
+      );
+      const resp: any = await Promise.race([callPromise, timeoutPromise]);
+      if (resp.text) {
+        return JSON.parse(resp.text);
+      }
+    } catch (modelErr: any) {
+      console.warn(`Tentative chapitre avec ${modelName} (${modelErr.status || modelErr.message}), bascule...`);
+    }
+  }
+  return null;
 }
 
 async function startServer() {
@@ -783,6 +907,8 @@ CONSIGNES STRICTES SUR LA LONGUEUR ET LA STRUCTURE DES CHAPITRES :
 - Structure chaque chapitre autour d'une idée principale claire, avec des exemples concrets, des études de cas réelles et des étapes actionnables pas-à-pas plutôt que du texte délayé ou du remplissage pour atteindre le nombre de mots.
 Chaque chapitre doit comporter au minimum ${minSectionsPerChapter} sous-sections avec de vrais paragraphes complets (au moins ${minParagraphsPerSection} à 6 paragraphes riches en substance par section, sans texte de remplissage banal ni ellipses).
 
+${ANTI_FABRICATION_RULES}
+
 Langue de rédaction: ${language}
 Public cible: ${targetAudience || "Passionnés et professionnels cherchant une maîtrise approfondie"}
 Tonalité stylistique: ${toneGuidelines[writingTone] || toneGuidelines.didactique}
@@ -795,7 +921,8 @@ Respecte scrupuleusement les contraintes de calibrage :
 - Pas de résumés ni de citations / callouts : rédaction directe, dense et continue.
 - Chaque chapitre doit comporter environ 2 500 mots réels (calibrage exact 350 mots/page).
 - Découpe en chapitres focalisés pour maintenir la clarté et l'impact.
-- Approche didactique, rigoureuse et concrète : exemples réels, étapes actionnables, pas de remplissage.
+- Approche didactique, rigoureuse et concrète : ancre chaque chapitre dans la matière ci-dessus, pas de remplissage.
+- Chaque chapitre doit exploiter des éléments SPÉCIFIQUES à son propre sujet tirés de cette source ; n'invente jamais d'entreprise, de statistique ou d'étude de cas qui n'en provient pas (voir règles anti-fabrication ci-dessus).
 
 Génère une réponse strictement structurée en JSON selon le schéma demandé avec :
 1. Un titre fort, élégant et mémorable
@@ -852,20 +979,38 @@ Génère une réponse strictement structurée en JSON selon le schéma demandé 
         });
       }
 
-      // Call Gemini with structured schema and maxOutputTokens: 16384
+      // Call Gemini with structured schema. maxOutputTokens now scales with
+      // the requested chapter count instead of a flat 16384 — a full
+      // ${suggestedChaptersCount}-chapter book at ~2500 words/chapter can
+      // need far more than 16384 tokens, and a truncated response used to
+      // silently produce short/malformed chapters that then got replaced
+      // wholesale by the static template below (the root cause of a book
+      // where every chapter looked templated).
+      const dynamicMaxOutputTokens = Math.min(65536, Math.max(16384, suggestedChaptersCount * 5500 + 3000));
+
       let response: any = null;
       let usedModel = "gemini-3.7-flash";
-      const modelsToTry = ["gemini-3.7-flash", "gemini-3.1-flash-lite", "gemini-flash-latest", "gemini-3.1-pro-preview"];
+      const modelsToTry = GEMINI_MODELS_TO_TRY;
 
-      for (const modelName of modelsToTry) {
-        try {
-          response = await ai.models.generateContent({
-            model: modelName,
-            contents: userPrompt,
-            config: {
-              systemInstruction: systemPrompt,
-              responseMimeType: "application/json",
-              maxOutputTokens: 16384,
+      // Two full passes over the model list: Gemini's own 503 errors state
+      // demand spikes are "usually temporary", but the code previously
+      // never retried at all before giving up entirely to the fully
+      // templated emergency fallback. A short backoff between passes gives
+      // a transient overload a chance to clear.
+      for (let attempt = 0; attempt < 2 && !response; attempt++) {
+        if (attempt > 0) {
+          console.warn("Premier passage Gemini entièrement échoué, nouvelle tentative après backoff...");
+          await new Promise((r) => setTimeout(r, 4000));
+        }
+        for (const modelName of modelsToTry) {
+          try {
+            response = await ai.models.generateContent({
+              model: modelName,
+              contents: userPrompt,
+              config: {
+                systemInstruction: systemPrompt,
+                responseMimeType: "application/json",
+                maxOutputTokens: dynamicMaxOutputTokens,
           responseSchema: {
             type: Type.OBJECT,
             properties: {
@@ -982,15 +1127,16 @@ Génère une réponse strictement structurée en JSON selon le schéma demandé 
           },
         },
       });
-          usedModel = modelName;
-          break;
-        } catch (callErr: any) {
-          console.warn(`Tentative avec ${modelName} (${callErr.status || callErr.message}), passage au modèle suivant...`);
+            usedModel = modelName;
+            break;
+          } catch (callErr: any) {
+            console.warn(`Tentative avec ${modelName} (${callErr.status || callErr.message}), passage au modèle suivant...`);
+          }
         }
       }
 
       if (!response) {
-        throw new Error("Tous les modèles Gemini ont échoué ou sont temporairement indisponibles.");
+        throw new Error("Tous les modèles Gemini ont échoué ou sont temporairement indisponibles après deux passages complets.");
       }
 
       const responseText = response.text || "{}";
@@ -1002,7 +1148,11 @@ Génère une réponse strictement structurée en JSON selon le schéma demandé 
       if (parsedData.contenu && Array.isArray(parsedData.contenu.chapitres)) {
         let rawChapters = parsedData.contenu.chapitres;
 
-        // If fewer chapters than requested, supplement with calibrated chapters
+        // If fewer chapters than requested, supplement with a real Gemini
+        // regeneration attempt grounded in that chapter's own plan entry
+        // first; only fall back to the static template if Gemini fails
+        // twice in a row (previously this went straight to the template,
+        // which is why padded chapters always looked identical).
         if (rawChapters.length < suggestedChaptersCount) {
           const missingCount = suggestedChaptersCount - rawChapters.length;
           const currentPlan = Array.isArray(parsedData.plan) ? parsedData.plan : [];
@@ -1010,28 +1160,81 @@ Génère une réponse strictement structurée en JSON selon le schéma demandé 
             const nextNum = rawChapters.length + 1;
             const planItem = currentPlan.find((p: any) => p.numero === nextNum);
             const topicTitle = planItem?.titre || `Approfondissement et Pratique — Module ${nextNum}`;
-            const newChap = generateCalibratedSubstantiveChapter(topicTitle, nextNum);
+            const geminiChapter = await generateChapterContentWithGemini(ai, {
+              subject: topicTitle,
+              contextDescription: planItem?.description ? `${planItem.description}\n\n${sourceDescription}` : sourceDescription,
+              targetAudience,
+              writingTone,
+              language,
+              chapterNumber: nextNum,
+            });
+            const newChap = geminiChapter
+              ? {
+                  id: `chap-${nextNum}`,
+                  numero: nextNum,
+                  titre: geminiChapter.titre || topicTitle,
+                  resume: geminiChapter.resume || "",
+                  objectifs: geminiChapter.objectifs || [],
+                  points_cles: geminiChapter.points_cles || [],
+                  sections: geminiChapter.sections || [],
+                  conclusion_chapitre: geminiChapter.conclusion_chapitre || "",
+                }
+              : generateCalibratedSubstantiveChapter(topicTitle, nextNum);
             rawChapters.push(newChap);
           }
         }
 
-        // Ensure every chapter has substantial depth (at least 1,400 words)
-        rawChapters = rawChapters.map((chap: any, idx: number) => {
+        // Ensure every chapter has substantial depth (at least 1,400 words).
+        // A short chapter now gets one real regeneration attempt (grounded
+        // in its own plan title/description, not just re-asked generically)
+        // before falling back to the static template — the template is now
+        // a last resort instead of the automatic outcome for every short
+        // chapter, which is what previously made every chapter in a book
+        // look identical whenever Gemini truncated or under-wrote a few of them.
+        const depthCheckedChapters: any[] = [];
+        for (let idx = 0; idx < rawChapters.length; idx++) {
+          const chap = rawChapters[idx];
           const currentWords = countChapterWords(chap);
           if (currentWords < 1400) {
-            const calibrated = generateCalibratedSubstantiveChapter(chap.titre || `Chapitre ${idx + 1}`, idx + 1);
-            return {
-              ...calibrated,
-              id: chap.id || `chap-${idx + 1}`,
-              numero: idx + 1,
-              titre: chap.titre || calibrated.titre,
-              resume: chap.resume || calibrated.resume,
-              objectifs: chap.objectifs?.length ? chap.objectifs : calibrated.objectifs,
-              points_cles: chap.points_cles?.length ? chap.points_cles : calibrated.points_cles,
-            };
+            const currentPlan = Array.isArray(parsedData.plan) ? parsedData.plan : [];
+            const planItem = currentPlan.find((p: any) => p.numero === idx + 1);
+            const topicTitle = chap.titre || planItem?.titre || `Chapitre ${idx + 1}`;
+            const geminiChapter = await generateChapterContentWithGemini(ai, {
+              subject: topicTitle,
+              contextDescription: planItem?.description ? `${planItem.description}\n\n${sourceDescription}` : sourceDescription,
+              targetAudience,
+              writingTone,
+              language,
+              chapterNumber: idx + 1,
+            });
+            if (geminiChapter && countChapterWords(geminiChapter) >= 1400) {
+              depthCheckedChapters.push({
+                id: chap.id || `chap-${idx + 1}`,
+                numero: idx + 1,
+                titre: geminiChapter.titre || topicTitle,
+                resume: geminiChapter.resume || chap.resume || "",
+                objectifs: geminiChapter.objectifs?.length ? geminiChapter.objectifs : chap.objectifs || [],
+                points_cles: geminiChapter.points_cles?.length ? geminiChapter.points_cles : chap.points_cles || [],
+                sections: geminiChapter.sections || [],
+                conclusion_chapitre: geminiChapter.conclusion_chapitre || "",
+              });
+            } else {
+              const calibrated = generateCalibratedSubstantiveChapter(topicTitle, idx + 1);
+              depthCheckedChapters.push({
+                ...calibrated,
+                id: chap.id || `chap-${idx + 1}`,
+                numero: idx + 1,
+                titre: chap.titre || calibrated.titre,
+                resume: chap.resume || calibrated.resume,
+                objectifs: chap.objectifs?.length ? chap.objectifs : calibrated.objectifs,
+                points_cles: chap.points_cles?.length ? chap.points_cles : calibrated.points_cles,
+              });
+            }
+          } else {
+            depthCheckedChapters.push(chap);
           }
-          return chap;
-        });
+        }
+        rawChapters = depthCheckedChapters;
 
         const processedChapters: any[] = [];
         for (const chap of rawChapters) {
@@ -1073,6 +1276,30 @@ Génère une réponse strictement structurée en JSON selon le schéma demandé 
         parsedData.contenu.metadata.mots_total = calculatedTotalWords;
         parsedData.contenu.metadata.pages_estimees = Math.max(targetPages, Math.ceil(calculatedTotalWords / 350));
         parsedData.contenu.metadata.temps_lecture_min = Math.max(1, Math.round(calculatedTotalWords / 200));
+
+        // Post-generation verification: compare every chapter's real body
+        // text against every other chapter's before returning the book.
+        // This is what would have caught "L'Ère Numérique Africaine" —
+        // a book where most/all chapters ended up built from the same
+        // static template — before it ever reached the user. If at least
+        // half of all chapter pairs are near-duplicates, the generation is
+        // rejected outright and NOT billed, rather than silently delivered.
+        const duplicationReport = analyzeChapterDuplication(processedChapters);
+        if (duplicationReport.severelyDuplicated) {
+          console.error(
+            `[DUPLICATION SÉVÈRE] ${duplicationReport.flaggedPairs.length} paire(s) de chapitres quasi-identiques (similarité max ${duplicationReport.maxSimilarity}). Génération rejetée, aucun crédit débité.`,
+            duplicationReport.flaggedPairs
+          );
+          return res.status(503).json({
+            error: "La génération a produit un contenu trop répétitif entre les chapitres (probable échec partiel du modèle) et a été rejetée avant toute facturation. Merci de relancer la génération.",
+            code: "CONTENT_DUPLICATION_REJECTED",
+            duplicationReport,
+          });
+        }
+        if (duplicationReport.flaggedPairs.length > 0) {
+          console.warn(`[DUPLICATION] ${duplicationReport.flaggedPairs.length} paire(s) de chapitres partiellement similaires détectée(s).`, duplicationReport.flaggedPairs);
+        }
+        parsedData.contenu.duplicationReport = duplicationReport;
       }
 
       // Estimate tokens
@@ -1097,7 +1324,7 @@ Génère une réponse strictement structurée en JSON selon le schéma demandé 
         meta: {
           tokensUsed: estimatedTokens,
           modelUsed: usedModel,
-          maxOutputTokens: 16384,
+          maxOutputTokens: dynamicMaxOutputTokens,
           durationMs,
           sourceKey: process.env.GEMINI_API_KEY_STUDIO ? "GEMINI_API_KEY_STUDIO" : "GEMINI_API_KEY",
         },
@@ -1111,40 +1338,24 @@ Génère une réponse strictement structurée en JSON selon le schéma demandé 
         return res.status(401).json({ error: "Authentification requise." });
       }
 
-      // If error occurs, fall back gracefully
+      // Previously this branch silently built a full "resilience mode"
+      // manuscript entirely out of generateFallbackManuscrit (100% static
+      // template, every chapter drawn from the same 5 hardcoded THEMES)
+      // and billed the user's real credits for it — this is exactly how a
+      // book like "L'Ère Numérique Africaine" could come out with every
+      // chapter sharing identical structure and a fabricated case study
+      // (only the company name varied). A templated book is not a
+      // legitimate deliverable, so it is no longer billed or returned as
+      // a success: the user gets a clear error and their credits are
+      // untouched, so they can retry once Gemini recovers.
       const durationMs = Date.now() - startTime;
-      const fallback = generateFallbackManuscrit(req.body);
-      const actualPages = fallback.contenu?.metadata?.pages_estimees || Number(req.body.estimatedPages) || 15;
-
-      let transactionData;
-      try {
-        transactionData = await finalizeGeneration({
-          profileId,
-          pages: actualPages,
-          description: `Génération manuscrit : ${fallback.titre}`,
-          ebookTitre: fallback.titre,
-          sourceType: req.body.sourceType || "prompt",
-          sourceDetail: req.body.youtubeUrl || req.body.fileName || (req.body.promptText ? String(req.body.promptText).slice(0, 80) : "Source personnalisée"),
-          tokensUsed: 3800,
-          modelUsed: "gemini-3.7-flash (mode résilience)",
-          durationMs,
-        });
-      } catch (billingErr: any) {
-        console.error("Échec du décompte de crédits en mode résilience :", billingErr);
-        return res.status(402).json({ error: billingErr.message || "Échec du décompte de crédits." });
-      }
-
-      return res.json({
-        ...fallback,
-        credits_consommes: actualPages,
-        credit_transaction: transactionData,
-        meta: {
-          tokensUsed: 3800,
-          modelUsed: "gemini-3.7-flash (mode résilience)",
-          durationMs,
-          sourceKey: "fallback",
-          warning: err.message || "Erreur de connexion API, manuscrit structuré généré par le moteur de secours.",
-        },
+      console.error(
+        `Génération Gemini indisponible après tentatives (${err.message || err}) — rejet sans facturation plutôt que livraison d'un manuscrit de repli.`
+      );
+      return res.status(503).json({
+        error: "Le service de génération est temporairement indisponible. Aucun crédit n'a été débité — merci de réessayer dans quelques instants.",
+        code: "GENERATION_UNAVAILABLE",
+        durationMs,
       });
     }
   };
@@ -1170,94 +1381,22 @@ Génère une réponse strictement structurée en JSON selon le schéma demandé 
         return res.status(400).json({ error: "Le paramètre subject (sujet du chapitre) est requis." });
       }
 
-      const chapterSystemPrompt = `Tu es un maître écrivain et architecte éditorial d'exception pour Sileyabook Studio.
-CONSIGNES STRICTES DE LONGUEUR ET DE MISE EN PAGE :
-1. RÈGLE ÉDITORIALE ABSOLUE : NE génère PAS de résumé de chapitre, NI de citations isolées ou callouts. Le texte doit débuter directement par les sections et paragraphes.
-2. Chaque chapitre généré doit contenir environ 2500 mots (entre 2 350 et 2 650 mots au total, ni significativement moins, ni plus).
-3. Le calibrage typographique A5 est de 350 mots par page (environ 7 à 7,5 pages A5 par chapitre).
-4. Si le développement naturel du sujet dépasse cette norme, découpe-le en plusieurs chapitres plus courts (ex: Chapitre ${chapterNumber} - Partie 1 et Chapitre ${chapterNumber} - Partie 2) plutôt que de laisser un déséquilibre.
-5. Structure le chapitre autour d'une idée principale claire, avec des exemples concrets, des cas réels chiffrés et des étapes actionnables pas-à-pas plutôt que du texte délayé ou du remplissage pour atteindre le nombre de mots.
-6. Rédige au moins 4 sections substantielles et détaillées, chacune avec 4 à 6 paragraphes denses et documentés et des notes de bas de page explicatives.
-
-Langue de rédaction: ${language}
-Public cible: ${targetAudience}
-Tonalité stylistique: ${writingTone}`;
-
-      const chapterUserPrompt = `Rédige un chapitre complet et exemplaire sur le sujet suivant :
-« ${subject.trim()} »
-Contexte du livre : ${bookContext}
-
-Respecte impérativement :
-- Pas de résumé ni de citations / callouts : rédaction fluide, directe et dense.
-- Volume : environ 2 500 mots réels de texte riche et substantiel (tolérance 2 350 à 2 650 mots).
-- Calibrage : densité de 350 mots par page.
-- Contenu pragmatique : une idée maîtresse limpide, 2 études de cas réelles, 4 étapes d'implémentation opérationnelles, une boîte d'avertissements méthodologiques.
-
-Retourne un objet JSON strictement conforme au schéma.`;
-
+      // Delegates to the shared helper (see generateChapterContentWithGemini
+      // above): same anti-fabrication rules as the main book generator, and
+      // a realistic 60s-per-model timeout instead of the previous 12s one
+      // — a 12s timeout was shorter than real Gemini latency for a
+      // structured ~2500-word chapter (25-70s+ observed), so this endpoint
+      // was silently falling through to the static template on every call.
       const ai = getGeminiStudioClient();
-      let parsedChapter: any = null;
-      let usedModel = "gemini-3.7-flash";
-
-      if (ai) {
-        const modelsToTry = ["gemini-3.7-flash", "gemini-3.1-flash-lite", "gemini-flash-latest", "gemini-3.1-pro-preview"];
-        for (const modelName of modelsToTry) {
-          try {
-            const callPromise = ai.models.generateContent({
-              model: modelName,
-              contents: chapterUserPrompt,
-              config: {
-                systemInstruction: chapterSystemPrompt,
-                responseMimeType: "application/json",
-                maxOutputTokens: 16384,
-                responseSchema: {
-                  type: Type.OBJECT,
-                  properties: {
-                    titre: { type: Type.STRING },
-                    resume: { type: Type.STRING },
-                    objectifs: { type: Type.ARRAY, items: { type: Type.STRING } },
-                    points_cles: { type: Type.ARRAY, items: { type: Type.STRING } },
-                    sections: {
-                      type: Type.ARRAY,
-                      items: {
-                        type: Type.OBJECT,
-                        properties: {
-                          titre: { type: Type.STRING },
-                          sous_titre: { type: Type.STRING },
-                          paragraphes: { type: Type.ARRAY, items: { type: Type.STRING } },
-                          callout: {
-                            type: Type.OBJECT,
-                            properties: {
-                              type: { type: Type.STRING },
-                              content: { type: Type.STRING },
-                              author: { type: Type.STRING },
-                            },
-                          },
-                        },
-                        required: ["titre", "paragraphes"],
-                      },
-                    },
-                    conclusion_chapitre: { type: Type.STRING },
-                  },
-                  required: ["titre", "resume", "sections", "conclusion_chapitre"],
-                },
-              },
-            });
-            const timeoutPromise = new Promise<never>((_, reject) =>
-              setTimeout(() => reject(new Error(`Timeout de génération avec ${modelName}`)), 12000)
-            );
-            const resp: any = await Promise.race([callPromise, timeoutPromise]);
-
-            if (resp.text) {
-              parsedChapter = JSON.parse(resp.text);
-              usedModel = modelName;
-              break;
-            }
-          } catch (modelErr: any) {
-            console.warn(`Tentative chapitre avec ${modelName} (${modelErr.status || modelErr.message}), bascule...`);
-          }
-        }
-      }
+      let parsedChapter: any = await generateChapterContentWithGemini(ai, {
+        subject,
+        contextDescription: `Contexte du livre : ${bookContext}`,
+        targetAudience,
+        writingTone,
+        language,
+        chapterNumber: Number(chapterNumber) || 1,
+      });
+      let usedModel = parsedChapter ? "gemini (voir logs serveur)" : "gemini-3.7-flash";
 
       if (!parsedChapter) {
         // High quality calibrated substantive chapter (~2500 words / 350 words per page A5)

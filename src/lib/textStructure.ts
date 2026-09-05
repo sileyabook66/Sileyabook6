@@ -335,6 +335,71 @@ export function getChapterMetrics(chap: Chapter): ChapterMetrics {
   };
 }
 
+export interface ChapterDuplicationReport {
+  flaggedPairs: Array<{ a: number; b: number; similarity: number }>;
+  maxSimilarity: number;
+  severelyDuplicated: boolean;
+}
+
+// Only real body paragraphs are compared — titles, objectifs and points_cles
+// naturally reuse the subject's own vocabulary between chapters, which would
+// create false positives if included.
+function extractChapterBodyText(chap: Partial<Chapter>): string {
+  let text = '';
+  chap.sections?.forEach((sec) => {
+    if (sec.paragraphes) text += ' ' + sec.paragraphes.join(' ');
+  });
+  return extractCleanPlainText(text).toLowerCase();
+}
+
+function wordShingles(text: string, n = 5): Set<string> {
+  const words = text.split(/\s+/).filter(Boolean);
+  const shingles = new Set<string>();
+  for (let i = 0; i <= words.length - n; i++) {
+    shingles.add(words.slice(i, i + n).join(' '));
+  }
+  return shingles;
+}
+
+function jaccardSimilarity(a: Set<string>, b: Set<string>): number {
+  if (a.size === 0 || b.size === 0) return 0;
+  let intersection = 0;
+  for (const shingle of a) if (b.has(shingle)) intersection++;
+  const union = a.size + b.size - intersection;
+  return union === 0 ? 0 : intersection / union;
+}
+
+/**
+ * Compare chaque chapitre à tous les autres via similarité de 5-grammes de
+ * mots (Jaccard) sur leurs paragraphes réels, afin de détecter un contenu
+ * structurellement dupliqué — typiquement le générateur de repli statique
+ * réutilisant les mêmes paragraphes-gabarits pour plusieurs chapitres avec
+ * seulement le sujet ou le nom d'entreprise qui change.
+ */
+export function analyzeChapterDuplication(
+  chapters: Partial<Chapter>[],
+  threshold = 0.3
+): ChapterDuplicationReport {
+  const shingleSets = chapters.map((c) => wordShingles(extractChapterBodyText(c)));
+  const flaggedPairs: Array<{ a: number; b: number; similarity: number }> = [];
+  let maxSimilarity = 0;
+
+  for (let i = 0; i < shingleSets.length; i++) {
+    for (let j = i + 1; j < shingleSets.length; j++) {
+      const sim = jaccardSimilarity(shingleSets[i], shingleSets[j]);
+      if (sim > maxSimilarity) maxSimilarity = sim;
+      if (sim >= threshold) {
+        flaggedPairs.push({ a: i + 1, b: j + 1, similarity: Number(sim.toFixed(2)) });
+      }
+    }
+  }
+
+  const totalPairs = (chapters.length * (chapters.length - 1)) / 2;
+  const severelyDuplicated = totalPairs > 0 && flaggedPairs.length / totalPairs >= 0.5;
+
+  return { flaggedPairs, maxSimilarity: Number(maxSimilarity.toFixed(2)), severelyDuplicated };
+}
+
 /**
  * Découpe un chapitre en plusieurs chapitres s'il dépasse très largement le calibrage (au-delà de 3 000 mots).
  * Préserve 100% de la substance en répartissant logiquement les sections et paragraphes.
